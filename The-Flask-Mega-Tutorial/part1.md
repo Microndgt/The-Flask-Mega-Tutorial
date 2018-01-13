@@ -79,10 +79,11 @@ $ cd microblog
 `[译者注]` 使用Conda对Python环境进行管理
 ---
 
-Conda官方文档上的介绍：
+[Conda官方文档](https://conda.io/)上的介绍：
 
->Package, dependency and environment management for any language—Python, R, Ruby, Lua, Scala, Java, JavaScript, C/ C++, FORTRAN 
->Conda is an open source package management system and environment management system that runs on Windows, macOS and Linux. Conda quickly installs, runs and updates packages and their dependencies. Conda easily creates, saves, loads and switches between environments on your local computer. It was created for Python programs, but it can package and distribute software for any language.
+> Package, dependency and environment management for any language—Python, R, Ruby, Lua, Scala, Java, JavaScript, C/ C++, FORTRAN 
+> 
+> Conda is an open source package management system and environment management system that runs on Windows, macOS and Linux. Conda quickly installs, runs and updates packages and their dependencies. Conda easily creates, saves, loads and switches between environments on your local computer. It was created for Python programs, but it can package and distribute software for any language.
 
 译者常使用conda，因为可以对多版本的Python环境进行管理，比较方便。
 
@@ -94,3 +95,78 @@ Conda官方文档上的介绍：
 - 移除环境: `conda remove --all -n name`
 - 激活环境: `source activate name`
 - 退出环境: `source deactivate name`
+
+一个"Hello World"的Flask应用
+===
+
+如果你去[Flask官方网站](http://flask.pocoo.org/)，你可以发现只有五行代码的非常简单的例子。我在这里将会给你展示一个可以写更大应用程序的基础结构的例子。
+
+应用将会在一个package中存在。在Python中，一个包含`__init__.py`的子目录被认为是一个package，也是可以被导入(import)的。当你导入一个包的时候，`__init__.py`会运行然后定义那些package向外部暴露的变量或者定义。
+
+让我们创建一个package叫做`app`，这个package会承载Flask应用。确保你在`microblog`目录下，然后执行下面的命令。`(venv) $ mkdir app`
+
+然后`__init__.py`将包含下面的代码：
+
+```
+from flask import Flask
+
+app = Flask(__name__)
+
+from app import routes
+```
+
+上面的代码首先从flask包中导入了Flask类，然后创建了一个Flask对象`app`。`__name__`变量是Python预定义的变量，它的值是目前正在使用的Python模块的名字。Flask使用这个模块的路径作为载入其他资源比如模板文件的基准路径。在所有情况下，传递`__name__`总是正确配置Flask的方式。然后应用导入`routes`模块，但是现在还没有创建。
+
+目前来看有一个概念是比较易混淆的，就是有两个实体叫做`app`。app包是通过app目录和`__init__.py`脚本定义的，可以通过`from app import routes`来引用。app变量是定义在`__init__.py`中Flask类的一个实例，它是app包的一个成员。
+
+另一个特点是routes模块在最底下导入，而不是最上面。这样做的目的是为了避免循环导入。后面你会看到routes模块需要在`__init__.py`中定义的app变量。因此将类似这样的模块放在在最后面导入可以避免因为两个文件相互引用而导致的错误。
+
+那么routes模块中包含什么呢？routes(路由)是应用实现的不同的URLs。在Flask中，应用的路由是由Python函数来处理的，叫做视图函数。视图函数会映射到一个或者多个路由URL上，这样Flask就知道对于客户端给定的URL该怎么处理。
+
+这是你的第一个视图函数，你需要写在新的模块`app/routes.py`中:
+
+```
+from app import app
+
+@app.route('/')
+@app.route('/index')
+def index():
+    return "Hello, World!"
+```
+
+这个视图函数其实很简单，这是返回了这个`Hello, World!`字符串。在函数定义上面的是两个装饰器，Python中特别的语法糖。装饰器改变或者增加了被装饰函数的功能。一个装饰器经常会用到的地方是将函数注册为某些事件的回调函数。在这里，`@app.route`装饰器创建了以参数给定的URL和视图函数的联系。这里有两个装饰器，将`/`和`/index`和index函数关联起来了。这意味着，不论web浏览器向哪个URL发送请求，Flask将会调用这个函数，然后将返回值作为对浏览器的响应。
+
+为了完成这个应用，你需要有一个顶层的Python脚本来定义Flask应用实例。名字就定义为`microblog.py`，用单独的一句来导入这个应用实例。`from app import app`
+
+还记得这两个`app`实体吗？Flask实例app是app包的一个成员。下面你可以看到整个项目的目录结构：
+
+```
+microblog/
+  venv/
+  app/
+    __init__.py
+    routes.py
+  microblog.py
+```
+
+另外Flask需要被告知如何去导入应用——通过`FLASK_APP`环境变量：`(venv) $ export FLASK_APP=microblog.py`
+
+如果你使用Windows，则使用`set`而不是`export`。
+
+完成上述步骤之后，你就可以启动应用了！
+
+```
+(venv) $ flask run
+ * Serving Flask app "microblog"
+ * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+```
+
+在服务器初始化完成之后，它就在等待来自客户端的链接了。`flask run`的输出表示服务器正在运行在`127.0.0.1`这个IP地址上，这个总是你本机的地址。这个地址很常用，因此有一个更简单的别名:`localhost`。服务器会监听特定的端口，在生产环境上的服务器一般会监听443端口，或者在不需要加密的时候使用80端口，但是这些都需要管理员权限。因为应用在开发环境上运行，Flask使用了可用的5000端口。下面在浏览器中输入下面的URL：`http://localhost:5000/`，当然你也可以输入下面这个: `http://localhost:5000/index`
+
+两个不同的URL会返回同样的东西。但是你输入其他URL将会发生一个404错误，因为只有上面两个URL可以被应用识别。
+
+![](https://blog.miguelgrinberg.com/static/images/mega-tutorial/ch01-hello-world.png)
+
+然后你可以按下Ctrl-C来停止服务器。
+
+恭喜你，你已经完成了作为web开发者的第一步！

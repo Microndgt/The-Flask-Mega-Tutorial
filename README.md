@@ -1,6 +1,6 @@
 # 《The Flask Mega-Tutorial》翻译计划
 
-![](https://img.shields.io/badge/status-0%25-green.svg)
+![](https://img.shields.io/badge/status-1%25-green.svg)
 
 - 原文地址: [blog.miguelgrinberg.com](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world)
 - 作者: `miguelgrinberg`
@@ -26,13 +26,13 @@
 
 注: 
 
-1. 另外这个项目的翻译内容可能不会和原文完全一样，这里对一些比较啰嗦的语句做了删节，但是会保证原意一致。
+1. 翻译内容可能不会和原文完全一样，这里对一些比较啰嗦的语句做了删节，但是会保证原意一致。
 2. 在翻译的同时，译者会添加一些相关实践中用到的东西以供参考。相关内容后都会有`[译者注]`标记。
 
 进度
 ---
 
-![](https://img.shields.io/badge/status-0%25-green.svg)
+![](https://img.shields.io/badge/status-1%25-green.svg)
 
 参与
 ---
@@ -47,4 +47,4 @@ Fork本仓库，翻译原文一部分，然后向本仓库提交一个PR。可�
 目录
 ---
 
-- [The Flask Mega-Tutorial Part I: Hello, World!](https://github.com/Microndgt/The-Flask-Mega-Tutorial/The-Flask-Mega-Tutorial/part1.md) - doing
+- [The Flask Mega-Tutorial Part I: Hello, World!](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part1.md) - doing

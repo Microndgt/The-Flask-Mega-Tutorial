@@ -1,6 +1,8 @@
 The Flask Mega-Tutorial, Part I: Hello, World!
 ===
 
+原文地址: [The Flask Mega-Tutorial, Part I: Hello, World!](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world)
+
 欢迎！你现在正要开始一段学习如何使用Python和Flask框架来创建web应用的旅程。上面的视频提供了本教程的预览。在第一章，你讲学习到如何开始一个Flask项目。在本章结束，你的电脑上将会有一个简单的Flask web应用在运行。
 
 注意：

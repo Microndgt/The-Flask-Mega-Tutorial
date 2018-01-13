@@ -43,3 +43,4 @@ Fork本仓库，翻译原文一部分，然后向本仓库提交一个PR。可�
 ---
 
 - [Part I: Hello, World!](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part1.md) - done - 100%
+- [Part II: Templates](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part2.md) - doing - 0%

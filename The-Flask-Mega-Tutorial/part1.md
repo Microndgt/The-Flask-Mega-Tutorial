@@ -8,7 +8,7 @@ The Flask Mega-Tutorial, Part I: Hello, World!
 注意：
 
 1. 如果你在寻找这个教程的老版本，[在这里](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world-legacy)
-2. 如果你想在这个博客中支持我的工作，或者等不及每周才更新的文章，我提供了这个教程打包为ebook以及视频集的完整版本。获取更多的信息，访问[learn.miguelgrinberg.com](learn.miguelgrinberg.com)
+2. 如果你想在这个博客中支持我的工作，或者等不及每周才更新的文章，我提供了这个教程打包为ebook以及视频集的完整版本。获取更多的信息，访问[learn.miguelgrinberg.com](https://learn.miguelgrinberg.com/)
 
 在这个教程中出现的所有代码示例都托管在Github仓库中。从Github上下载代码省去了你敲代码的时间，但是我还是强烈建议你自己敲代码，至少在前几章中。一旦你对Flask和示例应用更加熟悉了，如果打字太过乏味，你就可以直接从Github中拉取代码。
 

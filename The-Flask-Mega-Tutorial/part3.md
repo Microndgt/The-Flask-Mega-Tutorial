@@ -96,3 +96,75 @@ class LoginForm(FlaskForm):
 因为Flask-WTF扩展没有提供自定义的版本，所以下面的四个类是我直接从WTForms包导入的，用来表示字段类型。在LoginForm类中，对于每一个字段都会创建相应的对象并且赋值给LoginForm类的一个类变量。每个字段都会将描述或者标签作为第一个参数。
 
 可选的`validators`参数是用来给字段附加验证行为的。`DataRequired`验证器简单的检查提交的字段是不是为空。还有很多可用的验证器，可以用到其他的一些表单上。
+
+表单模板
+===
+
+下一步就是将表单加入到HTML模板中，这样就可以被渲染为一个web页面了。好消息是在`LoginForm`类中定义的字段知道如果将自己渲染为HTML，因此这项工作非常简单。下面你可以看到一个登陆模板，这个文件存储在`app/tempaltes/login.html`
+
+```
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Sign In</h1>
+    <form action="" method="post">
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.username.label }}<br>
+            {{ form.username(size=32) }}
+        </p>
+        <p>
+            {{ form.password.label }}<br>
+            {{ form.password(size=32) }}
+        </p>
+        <p>{{ form.remember_me() }} {{ form.remember_me.label }}</p>
+        <p>{{ form.submit() }}</p>
+    </form>
+{% endblock %}
+```
+
+这个模板中我再次通过`extends`模板继承语句使用了在第二节中展示的`base.html`。我将会在所有模板中使用继承，以确保在应用的所有页面顶部都可以包含一个导航栏。
+
+这个模板需要一个LoginForm类的实例作为参数，即你看到的form。这个参数会被login视图函数传入，但是目前还没有完成这个函数。
+
+HTML的`<form>`元素用来承载web表单。表单的`action`属性用来告诉浏览器在用户点击提交信息的时候使用这个URL。如果action为空，则表单会提交到当前地址栏的URL，也就是渲染当前页面表单的URL。`method`属性表示当提交表单到服务器的时候应该使用什么HTTP方法。默认是发送一个`GET`请求，但是在大多数情况下会使用POST请求，因为POST请求可以在请求体中包含表单数据，而GET请求会将form字段放到URL中，这样搞得地址栏乱糟糟的，体验很不好。
+
+`form.hidden_tag()`会生成一个用来保护表单免受CSRF攻击的令牌。为了保护表单，你需要做的只是在表单中包含这个隐藏字段以及在Flask配置中定义`SECRET_KEY`变量。如果你做好了这两件事，剩下的就交给Flask-WTF吧。
+
+如果你之前写过HTML web表单，你可能会觉得在模板中没有HTML字段会很奇怪。这是因为form对象的字段知道如何将自己渲染为HTML。所有我需要做的是，如果需要字段名，则使用`{{ form.<field_name>.label }}`；如果需要字段，则使用`{{ form.<field_name>() }}`。对于字段可能需要传递额外的参数作为HTML属性。模板中的username和password两个字段使用的`size`参数将会作为属性加入到`<input>`元素中。而且你也可以在这里给表单字段附加CSS classes或者IDs。
+
+表单视图
+===
+
+在你能看到表单之前，只剩最后一步——在应用中添加一个新的视图函数，用来渲染上一节的模板。
+
+因此让我们来创建一个映射`/login` URL的视图函数吧。这个函数会创建一个form对象，然后传递给模板用来渲染。这个视图函数依然可以定义在`app/routes.py`模块里。
+
+```
+from flask import render_template
+from app import app
+from app.forms import LoginForm
+
+# ...
+
+@app.route('/login')
+def login():
+    form = LoginForm()
+    return render_template('login.html', title='Sign In', form=form)
+```
+
+这里我从`forms.py`导入了LoginForm类，并且实例化了一个对象，将其送到模板中。`form=form`语法看起来很奇怪，但是仅仅是将form对象传递到了模板中。这就是渲染表单字段所有需要做的事情。
+
+为了能够容易的进入登录表单，可以在base模板中的导航栏中添加一个链接：
+
+```
+<div>
+    Microblog:
+    <a href="/index">Home</a>
+    <a href="/login">Login</a>
+</div>
+```
+
+这时候你就可以运行应用程序并且可以在浏览器中看到表单了。在浏览器地址栏输入`http://localhost:5000/`然后在顶部导航栏中点击`Login`链接就可以看到登录表单了，是不是很酷？
+
+![](https://blog.miguelgrinberg.com/static/images/mega-tutorial/ch03-login-form.png)

@@ -34,9 +34,10 @@
 
 Fork本仓库，翻译原文一部分，然后向本仓库提交一个PR。可以是新的翻译，也可以是提issue以及任何有助于本项目的提交。
 
-注意：
-
-- 翻译之前请先看一下打开的PR，避免多个人翻译同一个地方，或者修正同一个地方。
+- PR以一篇文章为单位。
+- 在准备翻译某篇文章之后，请先看一下目前master分支的翻译进度和打开的PR，避免多个人翻译同一个地方。如果暂时还没有翻译，那么迅速初始化并且完成初始提交，并且开一个PR。
+- 如果仍然出现多人发了同一节的PR，那么将会按照时间顺序接受第一个PR，后面的会拒绝PR。
+- 一旦提交了PR，那么请尽快的翻译，与此同时项目组也会对翻译内容进行review，还请翻译者不断的润色和优化。
 - 内容使用Markdown组织。
 
 目录
@@ -45,3 +46,9 @@ Fork本仓库，翻译原文一部分，然后向本仓库提交一个PR。可�
 - [Part I: Hello, World!](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part1.md) - done - 100%
 - [Part II: Templates](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part2.md) - done - 100%
 - [Part III: Web Forms](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part3.md) - doing - 30%
+
+贡献者
+---
+
+- [Microndgt](https://github.com/Microndgt)
+- [vsxen](https://github.com/vsxen)

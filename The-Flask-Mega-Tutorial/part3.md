@@ -71,3 +71,28 @@ from app import routes
 >>> app.config['SECRET_KEY']
 'you-will-never-guess'
 ```
+
+用户登陆表单
+===
+
+Flask-WTF扩展使用Python类来表达web表单。表单类简单的使用类变量代表表单字段。
+
+再一次牢记关注点分离，我将会使用一个新的`app/forms.py`模块来存储我的表单类。作为开始，我们先定义一个用户登陆表单，用来请求用户输入用户名和密码。表单还会包含一个`remember me`的选择框和一个提交按钮：
+
+```
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from wtforms.validators import DataRequired
+
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    remember_me = BooleanField('Remember Me')
+    submit = SubmitField('Sign In')
+```
+
+大多数Flask扩展会使用`flask_<name>`的命名传统作为它们顶层的导入符号。在这个例子中，Flask-WTF使用了`flask_wtf`。在`app/form.py`顶部，FlaskForm基类就是从这导入的。
+
+因为Flask-WTF扩展没有提供自定义的版本，所以下面的四个类是我直接从WTForms包导入的，用来表示字段类型。在LoginForm类中，对于每一个字段都会创建相应的对象并且赋值给LoginForm类的一个类变量。每个字段都会将描述或者标签作为第一个参数。
+
+可选的`validators`参数是用来给字段附加验证行为的。`DataRequired`验证器简单的检查提交的字段是不是为空。还有很多可用的验证器，可以用到其他的一些表单上。

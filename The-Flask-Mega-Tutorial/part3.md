@@ -27,7 +27,7 @@ Flask扩展也是普通的Python包，可以使用pip来安装。你可以用以
 
 应用有几种指定配置选项的格式。最基本的是以`app.config`的键(key)的形式定义变量，它使用了字典的风格来定义变量。比如，你可以这样：
 
-```
+```python
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'you-will-never-guess'
 # ... add more variables here as needed
@@ -37,7 +37,7 @@ app.config['SECRET_KEY'] = 'you-will-never-guess'
 
 我非常喜欢使用一个类来储存配置，是因为它非常容易扩展。为了更好的组织，我将会在一个单独的Python模块中创建这个配置类。下面你可以看到为应用创建的新的配置类，存储在顶层目录的`config.py`模块中。
 
-```
+```python
 import os
 
 class Config(object):
@@ -52,7 +52,7 @@ class Config(object):
 
 现在我已经有了配置文件，我需要告知Flask读取并且应用配置。这可以通过使用`app.config.from_object()`方法来完成：
 
-```
+```python
 from flask import Flask
 from config import Config
 
@@ -66,7 +66,7 @@ from app import routes
 
 正如我上面提到的，配置项可以使用字典语法来从`app.config`读取。下面展示了我如何读取secret key的：
 
-```
+```shell
 >>> from microblog import app
 >>> app.config['SECRET_KEY']
 'you-will-never-guess'
@@ -79,7 +79,7 @@ Flask-WTF扩展使用Python类来表达web表单。表单类简单的使用类�
 
 再一次牢记关注点分离，我将会使用一个新的`app/forms.py`模块来存储我的表单类。作为开始，我们先定义一个用户登陆表单，用来请求用户输入用户名和密码。表单还会包含一个`remember me`的选择框和一个提交按钮：
 
-```
+```python
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired

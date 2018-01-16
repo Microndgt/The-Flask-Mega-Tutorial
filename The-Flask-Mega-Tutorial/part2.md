@@ -31,7 +31,7 @@ microblog\
 
 视图函数返回了一个简单的字符串。我要做的就是将这个返回的字符串展开成一个完整的HTML页面。比如这样：
 
-```
+```python
 from app import app
 
 @app.route('/')
@@ -61,7 +61,7 @@ def index():
 
 下面你可以看到你的第一个模板，和上面`index()`视图函数返回的HTML页面很相似，将这个文件保存在`app/templates/index.html`
 
-```
+```html
 <html>
     <head>
         <title>{{ title }} - Microblog</title>
@@ -76,7 +76,7 @@ def index():
 
 现在页面的展示已经放到了HTML模板中，视图函数就被简化了：
 
-```
+```python
 from flask import render_template
 from app import app
 
@@ -98,7 +98,7 @@ def index():
 
 你已经看到了Jinja2在渲染的时候是如何将真实的值替换占位符的，但是这只是Jinja2众多强大功能之一。比如，模板同样支持以`{%...%}`块的方式的控制语句。`index.html`的下一个版本就是增加一个条件语句。
 
-```
+```html
 <html>
     <head>
         {% if title %}
@@ -122,7 +122,7 @@ def index():
 
 同样，我会创建一些模拟的用户对象和一些文章对象来展示。
 
-```
+```python
 from flask import render_template
 from app import app
 
@@ -149,7 +149,7 @@ def index():
 
 对于这个问题，Jinja2提供了`for`控制结构：
 
-```
+```html
 <html>
     <head>
         {% if title %}
@@ -180,7 +180,7 @@ Jinja2拥有模板继承特性就是来解决这个问题的。在本质上，�
 
 所以我要做的就是定义一个叫`base.html`的基础模板，其包含了一个简单的导航栏以及之前实现的简单逻辑。你需要将下面的代码保存到`app/template/base.html`模板中
 
-```
+```html
 <html>
     <head>
       {% if title %}
@@ -201,7 +201,7 @@ Jinja2拥有模板继承特性就是来解决这个问题的。在本质上，�
 
 在有了基础模板，我现在可以让`index.html`来继承`base.html`
 
-```
+```html
 {% extends "base.html" %}
 
 {% block content %}

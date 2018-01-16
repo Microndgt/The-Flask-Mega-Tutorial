@@ -23,7 +23,7 @@ The Flask Mega-Tutorial, Part I: Hello, World!
 
 为了保证你的Python安装成功，你可以打开一个终端窗口然后键入`python3`或者`python`。下面是你应该会看到的:
 
-```
+```shell
 $ python3
 Python 3.5.2 (default, Nov 17 2016, 17:05:23)
 [GCC 5.4.0 20160609] on linux
@@ -48,7 +48,7 @@ Python使用一个叫虚拟环境的概念来解决这一问题。一个虚拟�
 
 首先我们为我们的项目创建一个目录`microblog`，也是我们应用的名字。
 
-```
+```shell
 $ mkdir microblog
 $ cd microblog
 ```
@@ -69,7 +69,7 @@ $ cd microblog
 
 如果你想确认Flask是否成功安装，你可以打开Python解释器然后键入`import Flask`:
 
-```
+```shell
 >>> import flask
 >>> _
 ```
@@ -107,7 +107,7 @@ $ cd microblog
 
 然后`__init__.py`将包含下面的代码：
 
-```
+```python
 from flask import Flask
 
 app = Flask(__name__)
@@ -125,7 +125,7 @@ from app import routes
 
 这是你的第一个视图函数，你需要写在新的模块`app/routes.py`中:
 
-```
+```python
 from app import app
 
 @app.route('/')
@@ -155,7 +155,7 @@ microblog/
 
 完成上述步骤之后，你就可以启动应用了！
 
-```
+```shell
 (venv) $ flask run
  * Serving Flask app "microblog"
  * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)

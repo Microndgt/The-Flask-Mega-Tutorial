@@ -20,7 +20,7 @@
 简介
 ---
 
-`The Flask Mega-Tutorial` 主要以 Flask 为 Web 框架，数据库使用关系型数据库，`Flask-SQLAlchemy` 为ORM，`Flask-Migrate` 做数据库迁移工具，通过完成一个博客网站遇到的种种问题作为主线，提出相应的解决方法，从而完成整个网站的设计和搭建。
+`The Flask Mega-Tutorial` 主要以 Flask 为 Web 框架，数据库使用关系型数据库，`Flask-SQLAlchemy` 为 ORM，`Flask-Migrate` 做数据库迁移工具，通过完成一个博客网站遇到的种种问题作为主线，提出相应的解决方法，从而完成整个网站的设计和搭建。
 
 通过阅读本文，你可以了解到在设计一个网站时候需要考虑什么，会遇到什么问题，可能的解决方式是什么，由此你可以对 Web 设计和开发有一个更全面的把握。
 
@@ -32,7 +32,7 @@
 参与
 ---
 
-Fork 本仓库，翻译原文一部分，然后向本仓库提交一个PR。可以是新的翻译，也可以是提 issue 以及任何有助于本项目的提交。
+Fork 本仓库，翻译原文一部分，然后向本仓库提交一个 PR。可以是新的翻译，也可以是提 issue 以及任何有助于本项目的提交。
 
 - PR 以一篇文章为单位。
 - 在准备翻译某篇文章之后，请先看一下目前 master 分支的翻译进度和打开的PR，避免多个人翻译同一个地方。如果暂时还没有翻译，那么迅速初始化并且完成初始提交，并且开一个 PR。
@@ -67,3 +67,23 @@ Issue
 ---
 
 - [lanpong](https://github.com/lanpong)
+
+工具
+===
+
+issue#4 文档格式检查工具
+---
+
+```
+usage: format.py [-h] [--verbose] [--test] path
+
+Issue#4 Format tools
+
+positional arguments:
+  path        要进行格式化的文件路径
+
+optional arguments:
+  -h, --help  show this help message and exit
+  --verbose   显示处理详情
+  --test      进行测试，而不是输出文件
+```

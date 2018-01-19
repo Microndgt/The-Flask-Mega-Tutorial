@@ -57,7 +57,7 @@ def index():
 
 如果你能将应用的逻辑和 web 页面的展示和布局分开的话，所有的东西都变得易于组织，不是吗？你甚至可以雇佣一个 web 页面设计者来创造非常牛逼的页面，而你只需要使用 Python 完成应用的逻辑代码。
 
-模板帮助实现了表示层和业务逻辑的分离。在 Flask 中，模板被写在单独的文件中，存储在应用的包的 `templates` 文件夹中。因此确保你在 `microblog` 文件夹下，然后创建`templates`文件夹: `(venv) $ mkdir app/templates`
+模板帮助实现了表示层和业务逻辑的分离。在 Flask 中，模板被写在单独的文件中，存储在应用的包的 `templates` 文件夹中。因此确保你在 `microblog` 文件夹下，然后创建 `templates` 文件夹: `(venv) $ mkdir app/templates`
 
 下面你可以看到你的第一个模板，和上面 `index()` 视图函数返回的 HTML 页面很相似，将这个文件保存在 `app/templates/index.html`
 
@@ -91,7 +91,7 @@ def index():
 
 将模板转换成完整的 HTML 页面的过程叫做`渲染(rendering)`。为了渲染模板，我必须从 Flask 中导入一个函数叫做 `render_template`，这个函数将模板名字和一个模板参数的变量列表作为参数，然后返回同样的模板，但是已经用变量将模板中的占位符给替换了。
 
-`render_template()` 函数调用了 [Jinja2](http://jinja.pocoo.org/) 模板引擎，该引擎是和 Flask 绑定在一起的。Jinja2将会使用通过 `render_template` 函数传递进来的参数来替代对应的 `{{...}}` 块。
+`render_template()` 函数调用了 [Jinja2](http://jinja.pocoo.org/) 模板引擎，该引擎是和 Flask 绑定在一起的。Jinja2 将会使用通过 `render_template` 函数传递进来的参数来替代对应的 `{{...}}` 块。
 
 条件语句
 ===

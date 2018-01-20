@@ -18,14 +18,16 @@ Python支持的数据库有很多，其中大都支持Flask，使数据库与应
 
 这个应用程序，像大多数其他人一样，可以使用任何一种类型的数据库来实现，但是出于上面所述的原因，我打算使用关系数据库。
 
-在第三章中，我向你展示了第一个Flask扩展。 在这一章中，我将使用另外两个。 
+在第三章中，我向你展示了第一个Flask扩展。 在这一章中，我将使用另外两个扩展
 
-第一个是Flask-SQLAlchemy ，它是一个为流行的SQLAlchemy包提供Flask友好包装的扩展，它是一个对象关系映射器或ORM。 
+第一个是Flask-SQLAlchemy ，它是为Flask定制的SQLAlchemy，它是一个对象关系映射器（ORM）。
+
 ORM允许应用程序使用高级实体（如类，对象和方法）而不是表和SQL来管理数据库。 ORM的工作是将高级操作转换成数据库命令。
 
-关于SQLAlchemy的好处是它不是一个ORM，而是许多关系数据库。 SQLAlchemy支持一大串数据库引擎，包括流行的MySQL ， PostgreSQL和SQLite 。 
-这是非常强大的，因为你可以使用不需要服务器的简单SQLite数据库进行开发，然后在生产服务器上部署应用程序时，
-你可以选择更强大的MySQL或PostgreSQL服务器，而无需改变你的应用程序。
+ SQLAlchemy支持很多数据库引擎，包括流行的MySQL ， PostgreSQL和SQLite 。
+
+这是非常强大的，因为你可以使用不需要服务器的SQLite数据库进行开发，然后在生产服务器上部署应用程序时，
+换成更强大的MySQL或PostgreSQL服务器，这一切都无需改变你的代码。
 
 要在虚拟环境中安装Flask-SQLAlchemy，请确保先激活虚拟环境，然后运行：
 
@@ -34,9 +36,10 @@ ORM允许应用程序使用高级实体（如类，对象和方法）而不是�
  **数据库迁移**
 
 我所见过的大多数数据库教程都是关于如何创建和使用数据库的，但没有充分解决在应用程序需要更改或增长时更新现有数据库的问题。
+
 这很难，因为关系型数据库是以结构化数据为中心的，所以当结构发生变化时，已经在数据库中的数据需要被迁移到修改后的结构中。
 
-我将在本章中介绍的第二个扩展是Flask-Migrate ，这个扩展是Alembic为SQLAlchemy写的的一个数据库迁移框架。 
+我将在本章中介绍的第二个扩展是Flask-Migrate ，这个扩展是Alembic为SQLAlchemy写的的一个数据库迁移框架。
 
 这个扩展使你在数据库迁移的过程中只需要做很少的工作。
 
@@ -63,10 +66,13 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 ```
-Flask-SQLAlchemy扩展从`SQLALCHEMY_DATABASE_URI`配置变量中获取应用程序数据库的位置。 
-从第3章可以看出，从环境变量中设置配置通常是一种很好的做法，并且当环境没有定义变量时提供一个类似打开失败的返回值。 
+Flask-SQLAlchemy扩展从`SQLALCHEMY_DATABASE_URI`配置变量中获取应用程序数据库的位置。
+
+从第3章可以看出，从环境变量中设置配置通常是一种很好的做法，并且当环境没有定义变量时提供一个类似打开失败的返回值。
+
 在这种情况下，我从DATABASE_URL环境变量中获取数据库URL，如果没有定义，
 我将配置一个名为app.db的数据库，位于应用程序的主目录中，该目录存储在basedir变量中。
+
 将`SQLALCHEMY_TRACK_MODIFICATIONS`配置选项设置为False可禁用我不需要的Flask-SQLAlchemy功能，即每次在数据库中进行更改时都会向应用程序发出信号。
 
 数据库将由数据库实例在应用程序中声明(`db = SQLAlchemy(app)`)。 
@@ -95,17 +101,21 @@ from app import routes, models
 **数据库模型**
 将存储在数据库中的数据将由一组类（通常称为数据库模型）表示 。 SQLAlchemy中的ORM层将执行将从这些类创建的对象映射到正确数据库表中的行所需的翻译。
 
-我们先来创建一个代表用户的模型。 使用[WWW SQL Designer](http://ondras.zarovi.cz/sql/demo/)工具，我使用下图来表示我们想要在users表中使用的数据：
+我们先来创建一个代表用户的模型。 使用 [WWW SQL Designer](http://ondras.zarovi.cz/sql/demo/) 工具，我使用下图来表示我们想要在users表中使用的数据：
 
 
 ![用户表](https://blog.miguelgrinberg.com/static/images/mega-tutorial/ch04-users.png)
 
-id字段通常在所有模型中，并被用作主键 。 数据库中的每个用户将被分配一个唯一的id值，存储在这个字段中。 
+id字段通常在所有模型中，并被用作主键 。 数据库中的每个用户将被分配一个唯一的id值，存储在这个字段中。
+
 主键在大多数情况下是由数据库自动分配的，所以我只需要提供标记为主键的id字段。
 
-`username`，`email`和`password_hash`字段定义为字符串（或数据库术语中的VARCHAR ），并指定其最大长度，以便数据库可以优化空间使用率。 
-尽管username和email字段可能被猜测出，但password_hash字段值却可以十分复杂。 我想确保我正在构建的应用程序是非常安全的，
-因此我不会将用户密码直接存储在数据库中。  我要写密码哈希 ，这大大提高了安全性。 这将成为另一章的主题，所以现在不要关心。
+
+`username`，`email`和`password_hash`字段定义为字符串（使用VARCHAR可变字符串 ，并指定其最大长度，以便数据库可以优化空间使用率）。
+
+
+虽然username和email字段可能被猜测出，但是password_hash字段值却可以十分复杂。 为了确定程序是十分安全的，
+密码不应该直接存在数据库里面，需要做加密操作（hash），说起来比较复杂，将是另一章的主题，所以现在不要关心。
 
 现在根据上面的用户表，修改`app/models.py`文件
 
@@ -121,7 +131,8 @@ class User(db.Model):
     def __repr__(self):
         return '<User {}>'.format(self.username)   
 ```
-上面创建的User类继承自db.Model ，这是来自Flask-SQLAlchemy的所有模型的基类。 
+上面创建的User类继承自db.Model ，这是来自Flask-SQLAlchemy的所有模型的基类。
+
 这个类将几个字段定义为类变量，字段被创建为db.Column类的实例，它将字段类型作为参数，以及其他可选参数。
 例如，允许指示哪些字段是唯一索引，这非常重要，以便以后在数据库中快速搜索。
 
@@ -135,16 +146,22 @@ class User(db.Model):
 ```
 
 **创建迁移存储库**
+
 在上一节中创建的模型类定义了此应用程序的初始数据库结构，但随着应用程序的不断发展，将会有一个需要改变的结构，
-很可能会增加新的字段，但有时也会修改或删除字段。 
+很可能会增加新的字段，但有时也会修改或删除字段。
+
 Flask-Migrate将以一种不需要从头重新创建数据库的方式进行更改。
 
-为了完成这个看起来很困难的任务，Flask-Migrate维护了一个迁移库 ，它是一个存储迁移脚本的目录。 
-每次对数据库模式进行更改时，都会向存储库中添加一个迁移脚本，其中包含更改的详细信息。 
+为了完成这个看起来很困难的任务，Flask-Migrate维护了一个迁移库 ，它是一个存储迁移脚本的目录。
+
+每次对数据库模式进行更改时，都会向存储库中添加一个迁移脚本，其中包含更改的详细信息。
+
 如果要将迁移应用到数据库，这些迁移脚本将按照创建的顺序执行。
 
-Flask-Migrate通过flask运行迁移命令，你已经看过flask run ，这是一个Flask的一个子命令。 
-flask db子命令由Flask-Migrate添加，以管理与数据库迁移相关的所有事情。 
+Flask-Migrate通过flask运行迁移命令，你已经看过`flask run`，这是一个Flask的一个子命令。
+
+flask db子命令由Flask-Migrate添加，以管理与数据库迁移相关的所有事情。
+
 现在就让我们通过运行`flask db init`来创建迁移语句：
 
 ```
@@ -165,11 +182,16 @@ flask db子命令由Flask-Migrate添加，以管理与数据库迁移相关的�
 
 **第一个数据库迁移**
 
-迁移数据库语句后，就可以创建第一个数据库迁移，其中包括映射到User数据库模型的用户表。 有两种方法来创建数据库迁移：手动或自动。
+迁移数据库语句后，就可以创建第一个数据库迁移，其中包括映射到User数据库模型的用户表。 
 
-要自动生成迁移，Flask-Migrate会将数据库模型定义的数据库模式与数据库中当前使用的实际数据库模式进行比较。 
-然后，使用必要的更改来填充迁移脚本，以使数据库模式与应用程序模型匹配。 
-在这种情况下，由于没有以前的数据库，自动迁移将把整个User模型添加到迁移脚本中。 
+有两种方法来创建数据库迁移：手动或自动。
+
+要自动生成迁移，Flask-Migrate会将数据库模型定义的数据库结构与数据库中当前使用的结构进行比较。
+
+然后，生成迁移脚本，以使数据库模式与应用程序模型匹配。
+
+在这种情况下，如果没有以前的数据库，会把整个User模型添加到迁移脚本中。
+
 `flask db migrate`子命令生成这些自动迁移：
 ```
 (venv) $ flask db migrate -m "users table"
@@ -180,15 +202,21 @@ INFO  [alembic.autogenerate.compare] Detected added index 'ix_user_email' on '['
 INFO  [alembic.autogenerate.compare] Detected added index 'ix_user_username' on '['username']'
   Generating /home/miguel/microblog/migrations/versions/e517276bb1c2_users_table.py ... done
 ```
-命令的输出让你了解Alembic包含在迁移中的内容。 前两行是信息性的，通常可以忽略。 
-然后它说它找到了一个用户表和两个索引。 然后它会告诉你在哪里写了迁移脚本。 
-e517276bb1c2代码是一个自动生成的用于迁移的唯一代码（这对你来说会有所不同）。 
+命令的输出让你了解Flask-Migrate在迁移过程中做了什么工作。 前两行是信息性的，通常可以忽略。
+
+然后它说它找到了一个用户表和两个索引。 然后它会告诉你在哪里写了迁移脚本。
+
+e517276bb1c2代码是一个自动生成的用于迁移的唯一代码（这对你来说会有所不同）。
+
 用-m选项给出的注释是可选的，它为迁移添加了一个简短的描述性文本。
 
-生成的迁移脚本现在是项目的一部分，需要将其合并到源代码管理中。 如果你好奇看看它的原理，可以检查脚本。
-你会发现它有两个函数叫做upgrade()和downgrade() 。 
-upgrade()函数应用迁移，而downgrade()函数将其删除。 
-这允许Alembic通过使用降级路径将数据库迁移到历史中的任何一点，甚至迁移到较旧的版本。
+生成的迁移脚本现在是项目的一部分，需要将其合并到源代码管理中。 如果你好奇看看它的原理，可以看看文件的内容。
+
+你会发现它有两个函数叫做upgrade()和downgrade() 。
+
+upgrade()函数应用迁移，而downgrade()函数将其回退。
+
+这样就可以在你后悔的时候回退到上一个版本
 
 `flask db migrate`命令不会对数据库进行任何更改，只会生成迁移脚本。 要将更改应用到数据库，必须使用`flask db upgrade`命令。
 
@@ -198,7 +226,8 @@ INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
 INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
 INFO  [alembic.runtime.migration] Running upgrade  -> e517276bb1c2, users table
 ```
-由于此应用程序使用SQLite， upgrade命令将检测到数据库不存在并将创建它（你会注意到在此命令完成后添加了一个名为app.db的文件，即SQLite数据库）。
+由于此应用程序使用SQLite， upgrade命令将检测到数据库不存在并将创建它（你会注意到在此命令完成后添加了一个名为app.db的文件，那就是SQLite数据库文件）。
+
 在使用数据库服务器（如MySQL和PostgreSQL）时，必须在运行upgrade之前在数据库服务器中创建数据库。
 
 数据库升级和降级工作流程
@@ -211,17 +240,19 @@ TODO
 关系数据库擅长存储数据项之间的关系。 考虑用户写博客文章的情况。 用户将在users表中有记录，并且该帖子将在posts表中具有记录。
 记录谁写了哪一篇文章最有效的方法是链接两个相关表的记录。
 
-一旦建立了用户和帖子之间的链接，数据库可以回答关于该链接的查询。 
-最微不足道的是当你有博客文章，需要知道用户写了什么。 一个更复杂的查询是相反的。 如果你有一个用户，你可能想知道这个用户写的所有帖子。 Flask-SQLAlchemy将帮助这两种类型的查询。
+一旦建立了用户和帖子之间的链接，数据库可以回答关于该链接的查询。
+比如说当你有博客文章，需要知道哪个用户写了什么，还有哪个用户都写了那些文章， Flask-SQLAlchemy支持这两种类型的查询。
 
 让我们展开数据库来存储博客文章，以查看实际中的关系。 以下是新posts表格的模式：
 ![post表](https://blog.miguelgrinberg.com/static/images/mega-tutorial/ch04-users-posts.png)
 
 
 
-posts表字段有所需的id ，post的内容和timestamp 。除此之外，我添加一个`user_id`字段，该字段链接到其作者。 
+posts表字段有所需的id ，post的内容和timestamp 。除此之外，我添加一个`user_id`字段，该字段链接到其作者。
+
 你已经看到所有的用户都有一个唯一的id主键。 将博客文章链接到创作该博客文章的用户的方法是添加对用户id的引用，
-这正是`user_id`字段的作用。 这个user_id字段被称为外键 。 
+这正是`user_id`字段的作用。 这个user_id字段被称为外键 。
+
 上面的数据库图显示了外键作为它所引用表的字段和它的id字段之间的链接。 这种关系被称为一对多关系 ，因为“一个”用户写了“多”篇文章的关系。
 
 修改后的app / models.py如下所示：
@@ -249,20 +280,27 @@ class Post(db.Model):
         return '<Post {}>'.format(self.body)
 ```
 
-新的Post表将代表用户编写的博客文章。 timestamp字段将被编入索引，如果你想按时间顺序检索帖子，这将非常有用。 
-我还添加了一个default参数，并通过了datetime.utcnow函数。 
-当你将一个函数作为默认函数传递时，SQLAlchemy会将该字段设置为调用该函数的值（请注意，在utcnow之后我没有包含() ，所以我传递函数本身，而不是调用它的结果）。
+新的Post表将代表用户编写的博客文章。 timestamp字段将被编入索引，如果你想按时间顺序检索帖子，这将非常有用。
+
+我还添加了一个default参数，并传给它datetime.utcnow函数。
+
+当你将一个函数作为默认函数传递时，SQLAlchemy会将该字段设置为调用该函数的值，也就是当前的时间（请注意，在utcnow之后我没有包含() ，所以我传递函数本身，而不是调用它的结果）。
+
 一般来说，你将需要在服务器应用程序中使用UTC日期和时间。 这确保你使用统一的时间戳，而不管用户位于何处。 这些时间戳会在显示时转换为用户的当地时间。
 
-user_id字段已初始化为user.id的外键，这意味着它引用了users表中的id值。 在这个引用中， user是数据库表的名称，Flask-SQLAlchemy自动将其设置为模型类的名称，
-并将其转换为小写字母。 User类有一个新的posts字段，这是用db.relationship初始化。 这不是实际的数据库字段，而是用户和帖子之间关系的高级视图，
-因此它不在数据库图表中。 对于一对多关系， db.relationship字段通常在“one”一侧定义，并用作访问“many”的便捷方式。
-因此，例如，如果我有一个用户存储在u ，表达式u.posts将运行一个数据库查询，返回该用户写的所有帖子。 
+user_id字段已初始化为user.id的外键，这意味着它引用了users表中的id值。 在这个引用中， user是数据库表的名称，Flask-SQLAlchemy自动将其设置为模型类的名称，并将其转换为小写字母。 User类有一个新的posts字段，这是用db.relationship初始化。
+
+这不是实际的数据库字段，而是用户和帖子之间关系的高级视图，因此它不在数据库图表中。 对于一对多关系， db.relationship字段通常在“one”一侧定义，并用作访问“many”的便捷方式。
+
+因此，例如，如果我有一个用户存储在u ，表达式u.posts将运行一个数据库查询，返回该用户写的所有帖子。
+
 db.relationship的第一个参数表示代表关系“多”方面的类。 backref参数定义了将被添加到指向“one”对象的“many”类的对象的字段的名称。
-这将添加一个post.author表达式，将返回给定的职位的用户。 lazy参数定义了关系的数据库查询将如何发布，这是我将在以后讨论的。 
+
+这将添加一个post.author表达式，将返回给定的职位的用户。 lazy参数定义了关系的数据库查询将如何发布，这是我将在以后讨论的。
+
 不要担心，如果这些细节还没有多少意义，我会在本文末尾向你展示这方面的例子。
 
-由于我已经更新了应用程序模型，因此需要生成一个新的数据库迁移：
+由于我已经更新了数据库模型，因此需要生成一个新的数据库迁移：
 
 ```
 (venv) $ flask db migrate -m "posts table"
@@ -281,11 +319,13 @@ INFO  [alembic.runtime.migration] Running upgrade e517276bb1c2 -> 780739b227a7, 
 ```
 如果你将项目存储在源代码管理中，请记住将新的迁移脚本添加到它。
 
-交互shell
+**交互shell**
 
-现在你已经定义数据库，但我没有告诉你如何添加和读取数据。 
-由于应用程序还没有任何数据库逻辑，所以让我们在Python解释器中使用命令行来熟悉它。 接下来启动python解释器。
-在启动解释器之前，确保你的虚拟环境已被激活。
+现在你已经定义数据库，但我没有告诉你如何添加和读取数据。
+
+由于应用程序还没有任何数据库逻辑，所以让我们先在Python解释器中使用命令行来熟悉它。
+
+接下来启动python解释器。在启动解释器之前，确保你的虚拟环境已被激活。
 
 一旦进入Python提示符，让我们导入数据库实例和模型：
 ```
@@ -300,8 +340,10 @@ INFO  [alembic.runtime.migration] Running upgrade e517276bb1c2 -> 780739b227a7, 
 >>> db.session.commit()
 ```
 对数据库的更改是在会话的上下文中完成的，可以通过db.session访问。 会话中可以累积多个更改，当你确定要提交更改的时候，
-可以发出一个运行`db.session.commit()` ，它以原子方式写入所有更改。 如果在任何时候处理会话时出现错误，
-调用`db.session.rollback()`将中止会话并删除存储在其中的所有更改。 
+可以发出一个运行`db.session.commit()` ，它以原子方式写入所有更改。
+
+如果在任何时候处理会话时出现错误，调用`db.session.rollback()`将中止会话并删除存储在其中的所有更改。
+
 要记住的重要一点是，只有在`db.session.commit()`时才把更改写入数据库。 
 
 让我们添加另一个用户：
@@ -311,7 +353,8 @@ INFO  [alembic.runtime.migration] Running upgrade e517276bb1c2 -> 780739b227a7, 
 >>> db.session.commit()
 ```
 
-所有模型都有一个query属性，它是运行数据库查询的入口点。 最基本的查询是返回该类的所有元素（query.all()) 
+所有模型都有一个query属性，它是运行数据库查询的入口点。 最基本的查询是返回该类的所有元素`query.all()`
+
 添加这些用户时， id字段会自动设置为1和2。
 
 ```
@@ -341,8 +384,11 @@ INFO  [alembic.runtime.migration] Running upgrade e517276bb1c2 -> 780739b227a7, 
 >>> db.session.commit()
 ```
 我不需要为timestamp字段设置一个值，因为这个字段有一个默认值，你可以在模型定义中看到。
-那user_id字段呢？ 回想一下，我在User类中创建的db.relationship将posts属性添加到用户，并将posts属性添加到posts。 
-我使用author虚拟字段将作者分配到post，而不必处理用户ID。 
+
+那user_id字段呢？ 回想一下，我在User类中创建的db.relationship将posts属性添加到用户，并将posts属性添加到posts。
+
+我使用author虚拟字段将作者分配到post，而不必处理用户ID。
+
 SQLAlchemy在这方面非常出色，因为它提供了对关系和外键的高级抽象。
 
 接下来，我们来看看几个数据库查询：
@@ -390,15 +436,18 @@ Flask-SQLAlchemy文档是了解可用于查询数据库的许多选项的最佳�
 >>> db.session.commit()
 ```
 
-上下文
+**上下文**
+
 还记得在刚刚开始Python解释器之后你做了什么吗？ 你做的第一件事是导入一些模块入口：
 
 ```
 >>> from app import db
 >>> from app.models import User, Post
 ```
-当你在写代码的时候，你需要经常在Python shell中测试，所以每次重复上面的导入都会变得枯燥乏味。 
-flask shell命令是另一个非常有用的命令工具。 shell命令是run后由Flask执行的第二个“核心”命令。 
+当你在写代码的时候，你需要经常在Python shell中测试，所以每次重复上面的导入都会变得枯燥乏味。
+
+flask shell命令是另一个非常有用的命令工具。 shell命令是run后由Flask执行的第二个“核心”命令。
+
 这个命令的目的是在应用程序的上下文中启动一个Python解释器。看下面的例子：
 
 ```
@@ -413,7 +462,8 @@ NameError: name 'app' is not defined
 >>> app
 <Flask 'app'>
 ```
-使用常规的解释器会话，除非明确导入app符号，否则不会知道app符号，但在使用flask shell ，该命令会预先导入应用程序实例。 
+使用常规的解释器会话，除非明确导入app符号，否则不会知道app符号，但在使用flask shell ，该命令会预先导入应用程序实例。
+
 flask shell不是它预先导入app ，而是你可以配置一个“外壳上下文”，这是一个预先导入其他符号的列表。
 
 microblog.py中的以下函数将创建一个将数据库实例和模型添加到shell会话的shell上下文：
@@ -426,8 +476,10 @@ from app.models import User, Post
 def make_shell_context():
     return {'db': db, 'User': User, 'Post': Post}
 ```
-`app.shell_context_processor decorator`将该函数注册为shell上下文函数。 
-当flask shell命令运行时，它将调用这个函数并在shell会话中注册它返回的项目。 
+`app.shell_context_processor decorator`将该函数注册为shell上下文函数。
+
+当flask shell命令运行时，它将调用这个函数并在shell会话中注册它返回的项目。
+
 函数返回一个字典而不是一个列表，因为对于每个项目，你还必须提供一个名字，在shell中它将被引用，这是由字典的key给出的。
 
 在添加shell上下文处理器函数后，你可以使用数据库实体，而无需导入它们：

@@ -282,3 +282,55 @@ def login():
 生成链接
 ===
 
+登录表单现在已经基本完成，但是在结束本章之前，我想讨论关于如何合适的在模板和重定向中包含链接。目前你已经看到有一些定义了链接的实例。比如，下面是在 base 模板中的导航栏。
+
+```html
+<div>
+    Microblog:
+    <a href="/index">Home</a>
+    <a href="/login">Login</a>
+</div>
+```
+
+登录视图函数中同样定义了一个传递给 `redirect()` 函数的链接。
+
+```python
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        # ...
+        return redirect('/index')
+    # ...
+```
+
+将链接直接写在模板或者源代码中的一个问题是如果将来你要重新组织你的链接，那么你就需要在整个应用中搜索并且替换所有的链接。
+
+因此为了更好的控制这些链接，Flask 提供了一个叫做 `url_for()` 的函数，它会使用内部的 URL 到视图函数的映射来生成 URL。比如 `url_for('login')` 返回 `/login`，`url_for('index')` 返回 `/index`。传递给 `url_for()` 的参数是 endpoint 的名字，也就是视图函数的名字。
+
+你可能会问为什么使用视图函数名字而不是 `URL`。是因为 URL 可能会经常变化，但是视图函数不会，因为视图函数只是内部使用的。第二个原因后面你将会学到，一些 URL 可能含有动态元素，因此自己来生成这些 URL 需要将多个元素组合在一起，不仅乏味而且易于出错。`url_for()` 函数同样可以处理这些复杂的 URL。
+
+因此从现在开始，在需要生成应用 URL 的时候，我将使用 `url_for()` 。那么在 base 模板中的导航栏将变成下面这个样子：
+
+```html
+<div>
+    Microblog:
+    <a href="{{ url_for('index') }}">Home</a>
+    <a href="{{ url_for('login') }}">Login</a>
+</div>
+```
+
+这是更新后的 `login()` 视图函数
+
+```python
+from flask import render_template, flash, redirect, url_for
+
+# ...
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        # ...
+        return redirect(url_for('index'))
+```

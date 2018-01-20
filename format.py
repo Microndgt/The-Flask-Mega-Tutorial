@@ -1,3 +1,4 @@
+# encoding=utf8
 """
 For: 用于修复翻译文章中出现 issue#4 中所提到的格式问题
 Author: SkyRover
@@ -34,7 +35,7 @@ def fix_format(path, verbose=True, test=True):
     basename = os.path.basename(path)
     dirname = os.path.dirname(path)
     output = os.path.join(dirname, "format_{}".format(basename))
-    origin_lines = open(path, 'r').readlines()
+    origin_lines = open(path, 'r', encoding="utf-8").readlines()
     res = []
     update = False
     for lineno, line in enumerate(origin_lines, start=1):

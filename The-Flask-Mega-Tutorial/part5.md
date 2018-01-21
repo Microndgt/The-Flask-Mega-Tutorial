@@ -65,3 +65,64 @@ False
 True
 ```
 
+Flask-Login 入门
+===
+
+在本章我将给你介绍一个非常流行的 Flask 扩展叫做 [Flask-Login](https://flask-login.readthedocs.io/)。这个扩展管理了用户登录状态，因此用户就可以登录到应用，应用会记住用户登录的状态，所以用户就可以访问其他页面。它还提供了 `remember me` 功能 —— 即使在用户关闭浏览器也能保持用户登录状态。下面是 Flask-Login 的安装：
+
+```shell
+(venv) $ pip install flask-login
+```
+
+和其他扩展类似，Flask-Login 需要在 `app/__init__.py` 中应用实例之后创建并且初始化。下面是这个扩展是如何初始化的:
+
+```python
+# ...
+from flask_login import LoginManager
+
+app = Flask(__name__)
+# ...
+login = LoginManager(app)
+
+# ...
+```
+
+改进用户模型
+===
+
+Flask-Login 扩展需要配合应用的用户模型一起工作，并且期望特定的属性和方法在用户模型中被实现。这样做很方便，因为只要这些需要的项被加入到模型中，Flask-Login 就不需要其他的依赖了。所以它可以和基于任何数据库系统的用户模型一起工作。
+
+四个必须项罗列如下：
+
+1. `is_authenticated`: 如果用户拥有有效验证的话为 True 否则为 False
+2. `is_active`: 如果用户账户是活跃的则为True, 否则为 False
+3. `is_anonymous`: 对于正常用户是 False，特殊的匿名用户是 True
+4. `get_id()`: 返回用户的唯一标识符字符串(Python2 中是 Unicode)
+
+当然我可以很容易的实现这四个属性，但是鉴于它们很常用，Flask-Login 提供了一个 `mixin` (混入) 类叫做 `UserMixin`，这个类中包含了适配大部分用户模型类的一般实现。下面是这个混入类如何加入到模型中：
+
+```python
+# ...
+from flask_login import UserMixin
+
+class User(UserMixin, db.Model):
+    # ...
+```
+
+用户载入函数
+===
+
+Flask-Login 通过在 Flask 的用户 session 中存储用户的唯一标识符来跟踪登录用户，这个 session 是为每一个登录应用的用户开辟的存储区域。每一次登录用户浏览新的页面，Flask-Loing 会从 session 中取得用户ID，然后将用户载入到内存。
+
+因为 Flask-Login 和数据库无关，因此需要应用来协助载入一个用户。因此，扩展期望应用来实现一个用户载入的函数，这样就可以根据给定的用户 ID 来载入一个用户。这个函数一般会放到 `app/models.py` 中：
+
+```python
+from app import login
+# ...
+
+@login.user_loader
+def load_user(id):
+    return User.query.get(int(id))
+```
+
+用户载入器通过 `@login.user_loader` 装饰器注册到 Flask-Login。`id` 是 Flask-Login 作为字符串参数传递到函数中的，因此需要将字符串转换成数字类型用来查询。

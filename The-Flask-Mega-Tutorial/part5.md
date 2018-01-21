@@ -95,7 +95,7 @@ Flask-Login 扩展需要配合应用的用户模型一起工作，并且期望�
 四个必须项罗列如下：
 
 1. `is_authenticated`: 如果用户拥有有效验证的话为 True 否则为 False
-2. `is_active`: 如果用户账户是活跃的则为True, 否则为 False
+2. `is_active`: 如果用户账户是活跃的则为 True, 否则为 False
 3. `is_anonymous`: 对于正常用户是 False，特殊的匿名用户是 True
 4. `get_id()`: 返回用户的唯一标识符字符串(Python2 中是 Unicode)
 
@@ -126,3 +126,77 @@ def load_user(id):
 ```
 
 用户载入器通过 `@login.user_loader` 装饰器注册到 Flask-Login。`id` 是 Flask-Login 作为字符串参数传递到函数中的，因此需要将字符串转换成数字类型用来查询。
+
+登录用户
+===
+
+让我们重新回顾一下登录视图函数，目前只实现了一个模拟的登录然后弹出一个 `flash()` 消息。现在应用已经可以连接用户数据库并且知道如何去验证密码，那么登录视图函数就可以完成了。
+
+```python
+# ...
+from flask_login import current_user, login_user
+from app.models import User
+
+# ...
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user is None or not user.check_password(form.password.data):
+            flash('Invalid username or password')
+            return redirect(url_for('login'))
+        login_user(user, remember=form.remember_me.data)
+        return redirect(url_for('index'))
+    return render_template('login.html', title='Sign In', form=form)
+```
+
+前两行处理了一种特殊情况，就是你已经登录了，但是你又去访问了 `/login` URL去登录。明显这是一个错误，因此我需要阻止它。Flask-Login 的 `current_user` 变量可以在获取代表客户端请求的用户对象的处理中随时使用。这个变量的值可能是从数据库来的用户对象(Flask-Login 从上面我们定义的用户载入函数中获取用户对象)，或者当用户没有登录的时候是一个特殊的匿名用户对象。还记得 Flask-Login 在用户对象中需要的那几个属性吗？其中一个就是 `is_authenticated`，用来方便的检查用户是否登录。如果用户已经登录，我只需要将他们重定向到首页。
+
+在 `flash()` 调用的前面，我现在可以真实的登录用户了。第一步是从数据库中载入用户。form 表单提交会包含用户名信息，因此我可以使用用户名来查询数据库以找到相应的用户。为了查询用户我使用了 `filter_by()` 这个 SQLAlchemy 查询对象。`filter_by()` 函数的结果只会包含匹配用户名的对象。因为我知道肯定要么只有一条，要么没有，所以我通过调用 `first()` 来完成查询，这个方法如果用户存在则返回一个用户对象，如果不存在则返回 None。在第四章你已经看到如果在查询中使用 `all()` 方法，查询执行后你会得到匹配这个查询的结果列表。`first()` 方法是另外一个经常使用的查询来获取单条结果。
+
+如果我得到了关于用户名的匹配，那么接下来我会检查表单提供的密码和查询出来的用户对象的密码是否匹配。这个过程会通过上面我定义的 `check_password()` 方法完成。首先会从用户对象中拿出密码哈希，然后检查用户输入的密码是否匹配这个密码哈希。因此我现在会有两种错误可能：用户名可能无效，或者密码不正确。不论哪种情况，我都会闪现一条消息，并且重定向页面到登录，这样用户可以重试。
+
+如果用户名和密码都正确，之后我会调用 Flask-Login 中的 `login_user()` 函数。这个函数会将用户注册为登录状态，这意味着将来用户访问的任何页面都会将 `current_user` 变量置为这个用户。
+
+为了完成登录过程，我只是将新登录的用户重定向到了首页。
+
+登出用户
+===
+
+我需要将用户登出。这可以通过 Flask-Login 的 `logout_user()` 函数完成，下面是一个登出的视图函数：
+
+```python
+# ...
+from flask_login import logout_user
+
+# ...
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+```
+
+为了向用户暴露这个接口，我可以将导航栏上的登录链接在用户登录之后自动的切换到登出链接。这可以通过在 `base.html` 模板中添加一个条件判断完成：
+
+```html
+ <div>
+    Microblog:
+    <a href="{{ url_for('index') }}">Home</a>
+    {% if current_user.is_anonymous %}
+    <a href="{{ url_for('login') }}">Login</a>
+    {% else %}
+    <a href="{{ url_for('logout') }}">Logout</a>
+    {% endif %}
+</div>
+```
+
+`is_anonymous` 属性是 Flask-Login 通过 `UserMixin` 类添加到用户对象的属性之一。`current_user.is_anonymous` 表达式在用户没有登录的情况下是 True。
+
+需要用户登录
+===
+

@@ -34,7 +34,7 @@ def fix_format(path, verbose=True, test=True):
     basename = os.path.basename(path)
     dirname = os.path.dirname(path)
     output = os.path.join(dirname, "format_{}".format(basename))
-    origin_lines = open(path, 'r').readlines()
+    origin_lines = open(path, 'r', encoding="utf-8").readlines()
     res = []
     update = False
     for lineno, line in enumerate(origin_lines, start=1):

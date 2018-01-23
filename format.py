@@ -8,6 +8,7 @@ Date: 2018-01-19
 import re
 import os
 import argparse
+import fire
 from collections import OrderedDict
 
 
@@ -31,7 +32,7 @@ patterns = OrderedDict({
 })
 
 
-def fix_format(path, verbose=True, test=True):
+def fix_format(path, verbose=False, test=False):
     basename = os.path.basename(path)
     dirname = os.path.dirname(path)
     output = os.path.join(dirname, "format_{}".format(basename))
@@ -63,9 +64,10 @@ def fix_format(path, verbose=True, test=True):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Issue#4 Format tools')
-    parser.add_argument('path', help="要进行格式化的文件路径")
-    parser.add_argument('--verbose', dest='verbose', action="store_true", help="显示处理详情")
-    parser.add_argument("--test", dest="test", action="store_true", help="进行测试，而不是输出文件")
-    args = parser.parse_args()
-    fix_format(args.path, verbose=args.verbose, test=args.test)
+    # parser = argparse.ArgumentParser(description='Issue#4 Format tools')
+    # parser.add_argument('path', help="要进行格式化的文件路径")
+    # parser.add_argument('--verbose', dest='verbose', action="store_true", help="显示处理详情")
+    # parser.add_argument("--test", dest="test", action="store_true", help="进行测试，而不是输出文件")
+    # args = parser.parse_args()
+    # fix_format(args.path, verbose=args.verbose, test=args.test)
+    fire.Fire(fix_format)

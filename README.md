@@ -75,16 +75,20 @@ Issue
 issue#4 文档格式检查工具
 ---
 
+使用了 [fire](https://github.com/google/python-fire)
+
+- 查看帮助：`python format.py -- --help`
+
 ```
-usage: format.py [-h] [--verbose] [--test] path
+Type:        function
+String form: <function fix_format at 0x10ed82048>
+File:        format.py
+Line:        35
 
-Issue#4 Format tools
-
-positional arguments:
-  path        要进行格式化的文件路径
-
-optional arguments:
-  -h, --help  show this help message and exit
-  --verbose   显示处理详情
-  --test      进行测试，而不是输出文件
+Usage:       format.py PATH [VERBOSE] [TEST]
+             format.py --path PATH [--verbose VERBOSE] [--test TEST]
+             --test 只进行测试，并不输出文件
+             --verbose 显示格式检查详情
 ```
+
+`python format.py README.md  --test --verbose`

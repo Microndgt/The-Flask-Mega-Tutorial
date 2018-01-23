@@ -1,3 +1,4 @@
+# encoding=utf8
 """
 For: 用于修复翻译文章中出现 issue#4 中所提到的格式问题
 Author: SkyRover

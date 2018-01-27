@@ -200,3 +200,217 @@ def logout():
 需要用户登录
 ===
 
+Flask-Login 提供了一个非常有用的特性：在浏览应用特定页面之前必须登录。如果有用户在没有登录的状态下试图浏览受保护的页面，那么 Flask-Login 会自动的将用户重定向到登录页面，只有当登录成功之后才会将用户导向至登录之前想访问的页面。
+
+为了实现这一特性，Flask-Login 需要知道处理登录的视图函数是什么，这个可以添加到 `app/__init__.py`
+
+```python
+# ...
+login = LoginManager(app)
+login.login_view = 'login'
+```
+
+上面的 `'login'` 值是登录视图的函数名字。也就是说，你可以使用 `url_for()` 获取到相应的 URL。
+
+Flask-Login 是通过一个 `@login_required` 装饰器来阻止匿名用户来访问受保护的视图函数的。当你在视图函数的 `@app.route` 装饰器下面加上这个装饰器，那么这个函数就变成受保护的，也会拒绝没有权限的用户访问。下面就是如何给应用的首页视图函数添加这个装饰器：
+
+```python
+from flask_login import login_required
+
+@app.route('/')
+@app.route('/index')
+@login_required
+def index():
+    # ...
+```
+
+剩下的就是如何在成功登陆之后跳转到用户想要访问的页面。当用户在没有登录的情况下访问受 `@login_required` 保护的视图函数就会被跳转到登录页面，但是需要在这个跳转中加入一些信息，这样才可以在登录之后跳转回去。如果用户访问 `/index`，那么 `@login_required` 就会拦截这个请求并且跳转到 `/login`，并且会在 URL 中加入一个查询字符串，组成了一个完成的跳转 URL: `/login?next=/index`。next 查询字符串会设置为原始的 URL，这样在登录之后应用就可以跳转回去了。
+
+下面是展示了如何读取和处理 `next` 查询字符串的一段代码：
+
+```python
+from flask import request
+from werkzeug.urls import url_parse
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    # ...
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user is None or not user.check_password(form.password.data):
+            flash('Invalid username or password')
+            return redirect(url_for('login'))
+        login_user(user, remember=form.remember_me.data)
+        next_page = request.args.get('next')
+        if not next_page or url_parse(next_page).netloc != '':
+            next_page = url_for('index')
+        return redirect(next_page)
+    # ...
+```
+
+在通过调用 Flask-Login 的 `login_user()` 函数登录用户之后，next 查询字符串的值就会被获取。Flask 提供了一个包含了客户端发送过来所有信息的 request 变量。特别的，`request.args` 属性以字典的方式暴露了所有查询字符串的内容。关于是否在成功登陆后跳转有以下三个需要考虑的地方：
+
+1. 如果登录 URL 没有一个 next 参数，那么用户就会被跳转到首页
+2. 如果登录 URL 的 next 参数被设置成了相对路径，那么用户就会被跳转到那个 URL
+3. 如果登录 URL 的 next 参数被设置成了包含域名的完整路径，则用户会被跳转到首页
+
+第一，二种情况比较好理解。第三种其实是使得应用变得更安全。攻击者可能在 next 参数中插入一段跳转到恶意站点的 URL，因此应用只能跳转那些是相对路径的，确保了跳转之后还是在本站点中。为了判断 URL 是否是相对或者绝对的，我使用了 Werkzeug 的 `url_parse()` 函数来解析参数并且检查 `netloc` 组件是否设置。
+
+`[译者注]`：一个 URL 的组成以实例解释如下：
+
+```
+# URL: http://www.baidu.com/index.php?username=github
+scheme='http', netloc='www.baidu.com', path='/index.php', params='', query='username=github', fragment=''
+```
+
+在模板中展示登录用户
+===
+
+目前系统已经有真实用户了，所以现在可以将以前的模拟用户删除了，使用真正的用户。我现在在模板中使用 Flask-Login 的 `current-user`：
+
+```html
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Hi, {{ current_user.username }}!</h1>
+    {% for post in posts %}
+    <div><p>{{ post.author.username }} says: <b>{{ post.body }}</b></p></div>
+    {% endfor %}
+{% endblock %}
+```
+
+而且我可以在视图函数中移除向模板中传递的 `user` 参数
+
+```python
+@app.route('/')
+@app.route('/index')
+def index():
+    # ...
+    return render_template("index.html", title='Home Page', posts=posts)
+```
+
+下来可以测试登录和登出功能是否正常。因为还没有加入用户注册功能，因此唯一的添加用户的方法就是用 Python shell 来操作数据库。因此我运行了 `flask shell` 并且输入以下的命令来注册一个用户：
+
+```shell
+>>> u = User(username='susan', email='susan@example.com')
+>>> u.set_password('cat')
+>>> db.session.add(u)
+>>> db.session.commit()
+```
+
+如果你启动应用然后访问 `http://localhost:5000/` 或者 `http://localhost:5000/index`，你就会被重定向到登录页面，在你登录之后，你就会被跳转到原始页面，那里就会看到个人问候语。
+
+用户注册
+===
+
+在这章中最后一个要构建的就是用户注册功能，这样用户就可以通过一个 web 表单来注册新用户。让我们从在 `app/forms.py` 中创建 web 表单类开始吧：
+
+```python
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
+from app.models import User
+
+# ...
+
+class RegistrationForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    password2 = PasswordField(
+        'Repeat Password', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Register')
+
+    def validate_username(self, username):
+        user = User.query.filter_by(username=username.data).first()
+        if user is not None:
+            raise ValidationError('Please use a different username.')
+
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if user is not None:
+            raise ValidationError('Please use a different email address.')
+```
+
+这个新表单会关联到几个验证函数。首先 `email` 字段在 `DataRequired()` 验证之后还添加了一个新的验证，叫做 `Email()`。这是从 WTForms 中提供的验证器，会确保用户输入的是合法的邮箱格式。
+
+因为这是一个注册表单，所以通常会询问用户键入两次密码防止输错。因此我有 `password` 和 `password2` 两个字段，第二个密码字段使用了另一个验证器叫做 `EqualTo()`，这会确保第二次输入的密码和第一次输入的一致。
+
+我还为这个类添加了两个方法叫做 `validate_username()` 和 `validate_email()`。当你以 `validate_<filed_name>` 的模式添加方法的时候，WTForms会将它们作为自定义验证器，并且在除了调用字段中定义的验证器外，还会调用这些验证函数。在这里我为了避免用户输入的用户名和邮箱在数据库中重复，因此这两个方法会在数据库中查询，如果存在相应的用户名和邮箱，则会引发一个 `ValidationError`。这个异常的参数会作为错误消息在字段旁边展示，这样用户就可以看到发生了什么。
+
+为了在 web 页面中展示这个表单，我需要一个 HTML 模板，存储在文件 `app/templates/register.html`。这个模板和登录表单很类似：
+
+```html
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Register</h1>
+    <form action="" method="post">
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.username.label }}<br>
+            {{ form.username(size=32) }}<br>
+            {% for error in form.username.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>
+            {{ form.email.label }}<br>
+            {{ form.email(size=64) }}<br>
+            {% for error in form.email.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>
+            {{ form.password.label }}<br>
+            {{ form.password(size=32) }}<br>
+            {% for error in form.password.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>
+            {{ form.password2.label }}<br>
+            {{ form.password2(size=32) }}<br>
+            {% for error in form.password2.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>{{ form.submit() }}</p>
+    </form>
+{% endblock %}
+```
+
+登录表单需要有一个链接可以让新用户前往注册页面：
+
+```html
+<p>New User? <a href="{{ url_for('register') }}">Click to Register!</a></p>
+```
+
+最后，我需要写一个处理用户注册的视图函数：
+
+```python
+from app import db
+from app.forms import RegistrationForm
+
+# ...
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(username=form.username.data, email=form.email.data)
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash('Congratulations, you are now a registered user!')
+        return redirect(url_for('login'))
+    return render_template('register.html', title='Register', form=form)
+```
+
+这个视图函数也很简单，我首先确保了用户是没有登录的。正如用户登录一样，这里的处理很相似。`if validate_on_submit()` 条件语句的逻辑就是创建一个新用户，写入到数据库，然后跳转到登录页面，这样用户就可以登录了。
+
+![](https://blog.miguelgrinberg.com/static/images/mega-tutorial/ch05-register-form.png)
+
+这样，用户就可以创建账户，登录登出了。记得尝试所有我在注册表单中加的的验证特性，以更深刻理解它们是怎么工作的。将来我会继续完善用户验证系统，比如加入修改密码等。但是现在，用户系统已经足够了，我们会去构建应用的其他部分。

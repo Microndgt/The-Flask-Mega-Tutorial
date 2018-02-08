@@ -56,7 +56,7 @@ def fix_format(path, verbose=False, test=False):
         res.append(line)
     if not test and update:
         print("Output: {}".format(output))
-        with open(output, 'w') as f:
+        with open(output, 'w',encoding='utf-8') as f:
             f.writelines(res)
     elif not update:
         print("Nothing to format...")

@@ -1,6 +1,6 @@
 # 《The Flask Mega-Tutorial》翻译计划
 
-进度 ![](https://img.shields.io/badge/status-16%25-green.svg)
+进度 ![](https://img.shields.io/badge/status-20%25-green.svg)
 
 - 原文地址: [blog.miguelgrinberg.com](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world)
 - 作者: `miguelgrinberg`
@@ -54,6 +54,7 @@ Fork 本仓库，翻译原文一部分，然后向本仓库提交一个 PR。可
 - [Part II: Templates](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part2.md) - done - 100%
 - [Part III: Web Forms](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part3.md) - done - 100%
 - [Part V: User Logins](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part5.md) - done - 100%
+- [Part VII: Error Handling](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part7.md) - done - 100%
 
 贡献者
 ===

@@ -293,15 +293,133 @@ order_by(Post.timestamp.desc())
 
 ```python
 def followed_posts(self):
-        followed = Post.query.join(
-            followers, (followers.c.followed_id == Post.user_id)).filter(
-                followers.c.follower_id == self.id)
-        own = Post.query.filter_by(user_id=self.id)
-        return followed.union(own).order_by(Post.timestamp.desc())
+    followed = Post.query.join(
+        followers, (followers.c.followed_id == Post.user_id)).filter(
+            followers.c.follower_id == self.id)
+    own = Post.query.filter_by(user_id=self.id)
+    return followed.union(own).order_by(Post.timestamp.desc())
 ```
 
 注意 `followed` 和 `own` 查询是如何在排序之前组合成一个的。
 
 用户模型的单元测试
+===
+
+虽然我并不认为关注功能是一个很复杂的功能，但是也不简单。在我写一些比较复杂的代码的时候，我会考虑代码在将来当我在修改应用其他部分后能不能正常运行。最好的办法是创建一套自动化的测试，这样每次修改之后都能重新运行这些测试。
+
+Python 提供了非常有用的 `unittest` 包来使得书写和执行单元测试变得容易。让我们在 `test.py` 模块中来创建对 `User` 类的单元测试吧。
+
+```python
+from datetime import datetime, timedelta
+import unittest
+from app import app, db
+from app.models import User, Post
+
+class UserModelCase(unittest.TestCase):
+    def setUp(self):
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
+        db.create_all()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_password_hashing(self):
+        u = User(username='susan')
+        u.set_password('cat')
+        self.assertFalse(u.check_password('dog'))
+        self.assertTrue(u.check_password('cat'))
+
+    def test_avatar(self):
+        u = User(username='john', email='john@example.com')
+        self.assertEqual(u.avatar(128), ('https://www.gravatar.com/avatar/'
+                                         'd4c74594d841139328695756648b6bd6'
+                                         '?d=identicon&s=128'))
+
+    def test_follow(self):
+        u1 = User(username='john', email='john@example.com')
+        u2 = User(username='susan', email='susan@example.com')
+        db.session.add(u1)
+        db.session.add(u2)
+        db.session.commit()
+        self.assertEqual(u1.followed.all(), [])
+        self.assertEqual(u1.followers.all(), [])
+
+        u1.follow(u2)
+        db.session.commit()
+        self.assertTrue(u1.is_following(u2))
+        self.assertEqual(u1.followed.count(), 1)
+        self.assertEqual(u1.followed.first().username, 'susan')
+        self.assertEqual(u2.followers.count(), 1)
+        self.assertEqual(u2.followers.first().username, 'john')
+
+        u1.unfollow(u2)
+        db.session.commit()
+        self.assertFalse(u1.is_following(u2))
+        self.assertEqual(u1.followed.count(), 0)
+        self.assertEqual(u2.followers.count(), 0)
+
+    def test_follow_posts(self):
+        # create four users
+        u1 = User(username='john', email='john@example.com')
+        u2 = User(username='susan', email='susan@example.com')
+        u3 = User(username='mary', email='mary@example.com')
+        u4 = User(username='david', email='david@example.com')
+        db.session.add_all([u1, u2, u3, u4])
+
+        # create four posts
+        now = datetime.utcnow()
+        p1 = Post(body="post from john", author=u1,
+                  timestamp=now + timedelta(seconds=1))
+        p2 = Post(body="post from susan", author=u2,
+                  timestamp=now + timedelta(seconds=4))
+        p3 = Post(body="post from mary", author=u3,
+                  timestamp=now + timedelta(seconds=3))
+        p4 = Post(body="post from david", author=u4,
+                  timestamp=now + timedelta(seconds=2))
+        db.session.add_all([p1, p2, p3, p4])
+        db.session.commit()
+
+        # setup the followers
+        u1.follow(u2)  # john follows susan
+        u1.follow(u4)  # john follows david
+        u2.follow(u3)  # susan follows mary
+        u3.follow(u4)  # mary follows david
+        db.session.commit()
+
+        # check the followed posts of each user
+        f1 = u1.followed_posts().all()
+        f2 = u2.followed_posts().all()
+        f3 = u3.followed_posts().all()
+        f4 = u4.followed_posts().all()
+        self.assertEqual(f1, [p2, p4, p1])
+        self.assertEqual(f2, [p2, p3])
+        self.assertEqual(f3, [p3, p4])
+        self.assertEqual(f4, [p4])
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)
+```
+
+现在我有四个测试包括：密码哈希，用户头像和关注功能。`setUp()` 和 `tearDown()` 方法是单元测试框架在测试之前和之后执行的特殊方法。我对 `setUp()` 方法有一些小的改动，阻止单元测试使用我开发中使用的数据库。通过将配置 `SQLALCHEMY_DATABASE_URI` 改为 `sqlite://`，SQLAlchemy 将在测试中使用 SQLite 内存数据库。`db.create_all()` 调用会创建数据库所有表。这是在脚本中创建数据库的快捷方式。在开发和生产环境中，我已经向你展示了如何通过数据库迁移来创建数据库表。
+
+你可以通过下面的命令来执行整个测试：
+
+```shell
+(venv) $ python tests.py
+test_avatar (__main__.UserModelCase) ... ok
+test_follow (__main__.UserModelCase) ... ok
+test_follow_posts (__main__.UserModelCase) ... ok
+test_password_hashing (__main__.UserModelCase) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.494s
+
+OK
+```
+
+从现在开始，任何时候改变应用之后，你都可以重新执行测试保证所有的测试都通过。而且，每当你添加一个功能，都应该添加对应的单元测试。
+
+将关注功能整合到应用中
 ===
 

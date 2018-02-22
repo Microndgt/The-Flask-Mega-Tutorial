@@ -423,3 +423,68 @@ OK
 将关注功能整合到应用中
 ===
 
+数据库和模型对关注功能的支持都基本完成，但是我还没有将这些功能整合到应用中。好消息是这件事很简单，都是基于你已经学习到的概念。
+
+让我们先在应用中加入关注和取消关注一个用户的路由：
+
+```python
+@app.route('/follow/<username>')
+@login_required
+def follow(username):
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash('User {} not found.'.format(username))
+        return redirect(url_for('index'))
+    if user == current_user:
+        flash('You cannot follow yourself!')
+        return redirect(url_for('user', username=username))
+    current_user.follow(user)
+    db.session.commit()
+    flash('You are following {}!'.format(username))
+    return redirect(url_for('user', username=username))
+
+@app.route('/unfollow/<username>')
+@login_required
+def unfollow(username):
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash('User {} not found.'.format(username))
+        return redirect(url_for('index'))
+    if user == current_user:
+        flash('You cannot unfollow yourself!')
+        return redirect(url_for('user', username=username))
+    current_user.unfollow(user)
+    db.session.commit()
+    flash('You are not following {}.'.format(username))
+    return redirect(url_for('user', username=username))
+```
+
+代码都很简单，主要关注一下错误检查，它会阻止可能的问题并且在问题发生的时候提供有用的信息。
+
+视图函数已经就位，我就可以从应用的页面来链接到这两个路由。我将在每个用户的个人页面处添加关注和取消关注链接：
+
+```html
+...
+<h1>User: {{ user.username }}</h1>
+{% if user.about_me %}<p>{{ user.about_me }}</p>{% endif %}
+{% if user.last_seen %}<p>Last seen on: {{ user.last_seen }}</p>{% endif %}
+<p>{{ user.followers.count() }} followers, {{ user.followed.count() }} following.</p>
+{% if user == current_user %}
+<p><a href="{{ url_for('edit_profile') }}">Edit your profile</a></p>
+{% elif not current_user.is_following(user) %}
+<p><a href="{{ url_for('follow', username=user.username) }}">Follow</a></p>
+{% else %}
+<p><a href="{{ url_for('unfollow', username=user.username) }}">Unfollow</a></p>
+{% endif %}
+...
+```
+
+用户信息模版的改变是在上次登陆时间的下面增加了一行展示有多少关注者和该用户关注了多少人。并且在你查看自己的信息页面的时候的编辑按钮可能变成下面三种情况之一：
+
+- 如果用户在看自己的信息页面，Edit 仍然和以前一样
+- 如果用户查看没有关注的用户，这个按钮就是 Follow
+- 如果用户查看已经关注的用户，这个按钮就是 Unfollow
+
+现在你就可以运行应用，然后创建几个用户用来体验关注功能。唯一你需要记得的事情是你得自己去敲 URL 来跳转到不同用户，因为现在还没有一个用户列表页面。比如，如果你想查看 susan 用户，你需要键入 `http://localhost:5000/user/susan` 来查看 susan 的个人信息页面。记得查看在你关注或者取消关注后检查下关注者数量和关注的数量变化。
+
+我应该可以在应用首页来展示关注用户的文章，但是现在功能还没有全部完成，因为用户还不能发表文章。所以等到以后功能完备之后才能进行。

@@ -250,3 +250,58 @@ id | text | user_id | follower_id | followed_id
 过滤
 ---
 
+联结操作返回了某个用户关注的所有用户的文章列表，但是这些数据并不是我最终想要的。我仅仅对该列表的一部分感兴趣，即某一个用户关注的文章，因此我需要将不要的文章去除，那么就要用到 `filter()` 调用。
+
+下面是查询的过滤部分：
+
+```python
+filter(followers.c.follower_id == self.id)
+```
+
+因为该查询是基于 User 类的，所以 `self.id` 表达式指代我感兴趣的用户的 ID。`filter()`调用在联结后的表中筛选 `follower_id` 和当前用户 ID 相同的记录，也就是我只保留了当前用户作为关注者的文章列表。
+
+我们假定关注者是 `john`，他的 id 字段是 1。下面是筛选之后的联结表：
+
+id | text | user_id | follower_id | followed_id
+---- | --- | --- | --- | ---
+1 | post from susan	| 2 | 1 | 2
+2 | post from david	| 4 | 1 | 4
+
+这正是我想要的文章列表！
+
+记得该查询是基于 Post 类的，因此即使我在数据库创建的临时表处停止，结果也只会是临时表的 posts 部分，而不包含联结出来的额外列。
+
+排序
+---
+
+查询的最后一步是对结果排序，排序部分如下：
+
+```python
+order_by(Post.timestamp.desc())
+```
+
+在这里我以文章创建时间降序排序。通过这样的排序，结果第一个就是最近创建的文章。
+
+组合自己和关注用户的文章
+===
+
+在 `followed_posts()` 函数中的查询语句是很有用的，但是有一个限制。用户一般会希望在看到关注者文章的时间线的同时，也能看到自己的文章，但是目前该查询不能完成这一功能。
+
+有两种方法来实现这个功能。最直接的方法是，让所有用户都关注自己，上面的查询就会将自己的文章也查询出来。这个方法的缺点在于会影响关注者的状态。所有的关注者数目会多一，因此需要在展示之前提前处理。第二种方法是单独查询用户自己的文章，然后使用 union 操作来将两个查询合并起来。
+
+最后我选择了第二种方法。下面你可以看到 `followed_posts()` 函数已经通过 union 来扩展获取了用户自己的文章。
+
+```python
+def followed_posts(self):
+        followed = Post.query.join(
+            followers, (followers.c.followed_id == Post.user_id)).filter(
+                followers.c.follower_id == self.id)
+        own = Post.query.filter_by(user_id=self.id)
+        return followed.union(own).order_by(Post.timestamp.desc())
+```
+
+注意 `followed` 和 `own` 查询是如何在排序之前组合成一个的。
+
+用户模型的单元测试
+===
+

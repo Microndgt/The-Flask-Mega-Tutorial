@@ -193,3 +193,60 @@ Post.query.join(...).filter(...).order_by(...)
 联结
 ---
 
+为了理解一个联结操作做了什么，让我们先看一个例子。假定我有一个 User 表，包含以下内容：
+
+id | username
+---- | ---
+1 | john
+2 | susan
+3 | mary
+4 | david
+
+为了简单起见，我没有显示用户模型的所有字段，只显示了查询必须的字段。
+
+并且假定，`followers` 关联表假定了 join 关注了用户 susan 和 david，用户 susan 关注了 mary，用户 mary 关注了 david。数据表如下所示：
+
+follower_id | followed_id
+---- | ---
+1 | 2
+1 | 4
+2 | 3
+3 | 4
+
+最后，文章表包含了每个用户的一篇文章
+
+id | text | user_id
+---- | --- | ---
+1 | post from susan	| 2
+1 | post from mary	| 3
+2 | post from david	| 4
+3 | post from john	| 1
+
+该表也忽略了无关本次讨论的其他字段
+
+下面是我之前查询中调用的 `join()`:
+
+```python
+Post.query.join(followers, (followers.c.followed_id == Post.user_id))
+```
+
+我在 `posts`(文章)表中进行了联结操作。第一个参数是 followers 关联表，第二个参数是联结条件。对于这个调用，数据库会创建一个将 posts 表数据和 followers 表数据组合起来的临时表。组合条件就是我传递进去的参数。
+
+联结条件是 followers 表中的 `followed_id` 字段必须和 posts 表中的 `user_id` 字段一致。为了完成这个合并，数据库会从 posts 表中取出每一行数据(联结的左侧)，然后添加从 followers 表(联结的右侧)中匹配该条件的所有行。如果 followers 中有多行匹配该条件，post 也会出现多次。如果一个给定的 post 没有在 followers 中的匹配，那么该 post 记录就不会出现在 联结的结果集中。
+
+对于上面的示例数据，联结操作的结果是：
+
+id | text | user_id | follower_id | followed_id
+---- | --- | --- | --- | ---
+1 | post from susan	| 2 | 1 | 2
+1 | post from mary	| 3 | 2 | 3
+2 | post from david	| 4 | 1 | 4
+3 | post from john	| 1 | 3 | 4
+
+注意 `user_id` 和 `followed_id` 列的值是对应的，这就是联结条件。用户 john 没有出现在联结表中，是因为没有人关注 john。david 的文章出现了两次，因为有两个不同的用户关注了 david。
+
+也许现在通过该联结做了什么还不是很清楚，但是请继续读下去，这仅仅是前面查询语句的一部分。
+
+过滤
+---
+

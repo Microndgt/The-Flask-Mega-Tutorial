@@ -56,6 +56,7 @@ Fork 本仓库，翻译原文一部分，然后向本仓库提交一个 PR。可
 - [Part V: User Logins](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part5.md) - done - 100%
 - [Part VII: Error Handling](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part7.md) - done - 100%
 - [Part VIII: Followers](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part8.md) - done - 100%
+- [Part IX: Pagination](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part8.md) - doing - 0%
 
 贡献者
 ===

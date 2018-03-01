@@ -263,4 +263,115 @@ def explore():
 分页导航
 ===
 
+下一步就是在文章列表底部添加导航到上一页和下一页的链接。还记得 `paginate()` 调用返回的是 Flask-SQLAlchemy 的 `Pagination` 类的对象么？目前为止，我只使用了 `items` 属性，包含了所有查询出来的条目列表。但是这个对象还有其他一些很有用的属性用来构建分页链接：
 
+- `has_next`: 如果为 True 表明当前页面之后还有至少一页
+- `has_prev`: 如果为 True 表明当前页面之前还有至少一页
+- `next_num`: 下一页的页码
+- `prev_num`: 上一页的页码
+
+有了这四个组件，我可以生成下一页和上一页的链接，然后将其传递到模板进行渲染。
+
+```python
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/index', methods=['GET', 'POST'])
+@login_required
+def index():
+    # ...
+    page = request.args.get('page', 1, type=int)
+    posts = current_user.followed_posts().paginate(
+        page, app.config['POSTS_PER_PAGE'], False)
+    next_url = url_for('index', page=posts.next_num) \
+        if posts.has_next else None
+    prev_url = url_for('index', page=posts.prev_num) \
+        if posts.has_prev else None
+    return render_template('index.html', title='Home', form=form,
+                            posts=posts.items, next_url=next_url,
+                            prev_url=prev_url)
+
+@app.route('/explore')
+@login_required
+def explore():
+    page = request.args.get('page', 1, type=int)
+    posts = Post.query.order_by(Post.timestamp.desc()).paginate(
+        page, app.config['POSTS_PER_PAGE'], False)
+    next_url = url_for('explore', page=posts.next_num) \
+        if posts.has_next else None
+    prev_url = url_for('explore', page=posts.prev_num) \
+        if posts.has_prev else None
+    return render_template("index.html", title='Explore', posts=posts.items,
+                            next_url=next_url, prev_url=prev_url)
+```
+
+在这两个视图函数中的 `next_url` 和 `prev_url` 在还有页面的时候通过 `url_for` 返回一个 URL 对象。如果当前页是文章集合的某一个端点，那么`has_prev` 或者 `has_next` 属性将会是 False，那么对应方向的链接将会是 None。
+
+一个 `url_for()` 函数比较有意思的地方是你可以给它添加关键字参数，如果该名字对应的参数没有直接加在 URL 上，那么 Flask 将会将它作为 URL 的查询参数。
+
+分页链接将会在 `index.html` 模板上设置，现在就让我们在文章列表下面渲染它们吧：
+
+```html
+...
+{% for post in posts %}
+    {% include '_post.html' %}
+{% endfor %}
+{% if prev_url %}
+<a href="{{ prev_url }}">Newer posts</a>
+{% endif %}
+{% if next_url %}
+<a href="{{ next_url }}">Older posts</a>
+{% endif %}
+...
+```
+
+该链接将同时加在首页和探索页面。第一个链接起名为 `Newer posts`，它将会显示最新的文章。第二个链接起名为 `Older posts` 将会显示后面的文章。如果任意一个链接是 None，那么都不会被显示出来。
+
+![](https://blog.miguelgrinberg.com/static/images/mega-tutorial/ch09-pagination.png)
+
+用户信息页面的分页
+===
+
+现在首页是比较高效的。然后还有一个在用户信息页的文章列表，只显示该用户的所有文章。为了保持一致，用户信息页的文章列表也将采取分页的形式。
+
+首先我对用户信息页视图函数进行修改，这依然是一个模拟文章对象列表。
+
+```python
+@app.route('/user/<username>')
+@login_required
+def user(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    page = request.args.get('page', 1, type=int)
+    posts = user.posts.order_by(Post.timestamp.desc()).paginate(
+        page, app.config['POSTS_PER_PAGE'], False)
+    next_url = url_for('user', username=user.username, page=posts.next_num) \
+        if posts.has_next else None
+    prev_url = url_for('user', username=user.username, page=posts.prev_num) \
+        if posts.has_prev else None
+    return render_template('user.html', user=user, posts=posts.items,
+                           next_url=next_url, prev_url=prev_url)
+```
+
+为了获取用户的所有文章列表，我使用了已经由 SQLAlchemy 设置的 `user.posts` 关系，该关系通过 `db.relationship()` 定义在 `User` 模型中。我使用了 `order_by()` 子句以获取最新的文章，然后进行分页。注意到通过 `url_for()` 产生的分页链接需要额外的 `username` 参数，所以它们依然会连接到用户信息页面。
+
+最后，对 `user.html` 模板进行修改：
+
+```html
+...
+{% for post in posts %}
+    {% include '_post.html' %}
+{% endfor %}
+{% if prev_url %}
+<a href="{{ prev_url }}">Newer posts</a>
+{% endif %}
+{% if next_url %}
+<a href="{{ next_url }}">Older posts</a>
+{% endif %}
+```
+
+在完成分页功能之后，你可以设置 `POSTS_PER_PAGE` 配置项一个更合理的值：
+
+```python
+class Config(object):
+    # ...
+    POSTS_PER_PAGE = 25
+```
+                    

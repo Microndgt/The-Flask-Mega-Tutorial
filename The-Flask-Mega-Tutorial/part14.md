@@ -30,3 +30,59 @@ The Flask Mega-Tutorial Part IX: Pagination
 语言辨别
 ===
 
+第一个问题是要辨别一个微博是用什么语言写的。这并不是严格上的科学问题，但是并不能总是清晰的检测一门语言，不过在大多数情况下，自动检测工作都还不错。在 Python 里，有一个很好的语言检测包叫做 `guess_language`。这个包的原始版本太老了，而且没有支持 Python3。因此我安装一个衍生版本同时支持 Python2 和 3。
+
+```shell
+(venv) $ pip install guess-language_spirit
+```
+
+计划是将每一篇微博都输入到这个包里，然后检测其语言。因为这样的分析是耗时的，我不想做重复工作，因此我会在微博提交的时候来设置语言。检测到的语言将会存储在 posts 表中。
+
+第一步是在 `Post` 模型中添加一个 `language` 字段
+
+```python
+class Post(db.Model):
+    # ...
+    language = db.Column(db.String(5))
+```
+
+在每次修改模型之后，都需要一个数据库迁移脚本
+
+```shell
+(venv) $ flask db migrate -m "add language to posts"
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.autogenerate.compare] Detected added column 'post.language'
+  Generating migrations/versions/2b017edaa91f_add_language_to_posts.py ... done
+```
+
+之后应用这个数据库迁移脚本
+
+```shell
+(venv) $ flask db upgrade
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Upgrade ae346256b650 -> 2b017edaa91f, add language to posts
+```
+
+我现在就可以在微博提交的时候检测和存储语言信息了：
+
+```python
+from guess_language import guess_language
+
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/index', methods=['GET', 'POST'])
+@login_required
+def index():
+    form = PostForm()
+    if form.validate_on_submit():
+        language = guess_language(form.post.data)
+        if language == 'UNKNOWN' or len(language) > 5:
+            language = ''
+        post = Post(body=form.post.data, author=current_user,
+                    language=language)
+        # ...
+```
+
+这样在每次微博提交之后，我都会运行 `guess_language` 函数来检测语言。如果语言返回是 UNKNOWN 或者我得到了一个非预期比较长的结果，我会在数据库存储一个空字符串。我将假定任何微博的语言字段为空字符串，则该微博语言为 UNKNOWN.
+

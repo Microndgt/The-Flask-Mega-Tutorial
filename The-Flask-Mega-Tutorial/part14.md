@@ -86,3 +86,74 @@ def index():
 
 这样在每次微博提交之后，我都会运行 `guess_language` 函数来检测语言。如果语言返回是 UNKNOWN 或者我得到了一个非预期比较长的结果，我会在数据库存储一个空字符串。我将假定任何微博的语言字段为空字符串，则该微博语言为 UNKNOWN.
 
+显示翻译链接
+===
+
+第二步很简单。我要做的是在不是当前用户使用语言的微博旁边加上翻译链接。
+
+```html
+{% if post.language and post.language != g.locale %}
+    <br><br>
+    <a href="#">{{ _('Translate') }}</a>
+{% endif %}
+```
+
+我加在 `_post.html` 子模板上，因此翻译功能将会出现在任何显示的微博上。翻译链接只有在该微博语言被检测到，并且该语言不匹配通过 Flask-Babel 的 localeselector 装置器装饰的函数选择的语言的时候才会出现。回忆在第十三章，选择的地区信息存储在 `g.locale`。链接的文本需要能被 Flask-Babel 翻译的形式添加，因此我使用了 `_()` 函数。
+
+注意到我现在还没有为这个链接绑定动作。首先我想弄明白如何执行真实的翻译。
+
+使用第三方的翻译服务
+===
+
+两大主要的翻译服务是 [Google Cloud Translation API](https://developers.google.com/translate/) 和 [Microsoft Translator Text API](http://www.microsofttranslator.com/dev/)。两者都是付费服务，但是微软提供了可选的层级，低层级的翻译是免费的。谷歌以前提供过免费翻译服务，但是现在即使最低层级的服务都是收费的。因为我现在只是想使用翻译进行试验而不想花钱，因此我会选择微软的解决方案。
+
+在你可以使用微软翻译 API 之前，你需要获得一个 [Azure](https://azure.com/) 账户 —— 微软云服务。你可以选择免费层级，但是需要提供信用卡号，如果你一直在免费层级，你的卡就不会被消费。
+
+一旦你有了 Azure 账户，前往 Azure 首页并且点击左上的 New 按钮，然后输入或者选择 `Translator Text API`。当我点击 Create 按钮，会出现一个可以定义新的翻译器资源的表单。你可以在下面看到我是如何完成表单的：
+
+![](https://blog.miguelgrinberg.com/static/images/mega-tutorial/ch15-azure-translator.png)
+
+当你再次点击 Create 按钮，你的账户将会添加一个翻译器 API 源。几秒钟之后，你将会在顶部收到一条翻译器源已经部署的消息。点击 Go to resource 按钮，然后点击 Keys 选项，你将会看到两个键，Key 1 和 Key 2.将任一个键复制然后输入到终端的环境变量里(如果你使用 Windows，使用 set 而不是 export)
+
+```shell
+(venv) $ export MS_TRANSLATOR_KEY=<paste-your-key-here>
+```
+
+键用来在翻译服务里认证，因此需要添加到应用配置里。
+
+```python
+class Config(object):
+    # ...
+    MS_TRANSLATOR_KEY = os.environ.get('MS_TRANSLATOR_KEY')
+```
+
+我更喜欢将配置写在环境变量里然后在这里将其导入到 Flask 的配置系统里。在有敏感信息，比如键或者密码的时候比较重要。你肯定不想将这些信息显式的写在代码里。
+
+微软的翻译器 API 是一个 web 服务，它接收 HTTP 请求。有多个 Python HTTP 客户端，最流行并且好用的是 `requests` 包。因此在虚拟环境中安装它：
+
+```shell
+(venv) $ pip install requests
+```
+
+下面你可以看到我使用微软翻译器 API 进行翻译的代码。我将它放在了新的 `app/translate.py` 模块里：
+
+```python
+import json
+import requests
+from flask_babel import _
+from app import app
+
+def translate(text, source_language, dest_language):
+    if 'MS_TRANSLATOR_KEY' not in app.config or \
+            not app.config['MS_TRANSLATOR_KEY']:
+        return _('Error: the translation service is not configured.')
+    auth = {'Ocp-Apim-Subscription-Key': app.config['MS_TRANSLATOR_KEY']}
+    r = requests.get('https://api.microsofttranslator.com/v2/Ajax.svc'
+                     '/Translate?text={}&from={}&to={}'.format(
+                         text, source_language, dest_language),
+                     headers=auth)
+    if r.status_code != 200:
+        return _('Error: the translation service failed.')
+    return json.loads(r.content.decode('utf-8-sig'))
+```
+

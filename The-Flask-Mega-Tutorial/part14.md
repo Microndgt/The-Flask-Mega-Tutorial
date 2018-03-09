@@ -157,3 +157,25 @@ def translate(text, source_language, dest_language):
     return json.loads(r.content.decode('utf-8-sig'))
 ```
 
+这个函数使用要翻译的文本，源语言以及目标语言作为参数，并且返回一个翻译后的文本。首先检查是否有相应翻译服务的配置，如果没有的话，会返回一个错误。错误也是一个字符串，所以从外界来看，就像是翻译后的文本。这样确保了即使出现错误，那么用户也能看到有意义的错误信息。
+
+requests 包的 `get()` 方法发送一个 GET 方法的 HTTP 请求，使用给定的 URL 作为第一个参数。我使用了 `v2/Ajax.svc/Translate` URL，它是翻译服务提供的，并且返回 JSON 形式的翻译文本。文本，源语言以及目标语言都需要以 URL 查询参数的方式给定，分别是 text, from 和 to。为了进行身份验证，我需要将配置中的 Key 传递过去。这个 Key 需要以自定义 HTTP 头的方式发送，名字是 `Ocp-Apim-Subscription-Key`。我创建了 auth 字典，并且将它传递给 requests 的 headers 参数。
+
+`requests.get()` 方法返回一个响应对象，包含了服务提供的所有细节。我首先检查返回状态码是不是 200，该状态码代表依次成功的请求。如果我得到其他状态码，我就知道发生了错误，所以我返回了错误字符串。如果状态码是 200，那么响应体就是一个 JSON 包装的对象，其包含翻译后的文本，因此我需要使用 `json.loads()` 函数来解析成 Python 对象。`content` 属性包含原始的响应体信息，但是字节对象，在传给 `json.loads()` 之前会转换成 UTF-8 字符串。
+
+下面你可以在 Python 控制台中看到我是如何使用新的 `translate()` 函数的。
+
+```shell
+>>> from app.translate import translate
+>>> translate('Hi, how are you today?', 'en', 'es')  # English to Spanish
+'Hola, ¿cómo estás hoy?'
+>>> translate('Hi, how are you today?', 'en', 'de')  # English to German
+'Are Hallo, how you heute?'
+>>> translate('Hi, how are you today?', 'en', 'it')  # English to Italian
+'Ciao, come stai oggi?'
+>>> translate('Hi, how are you today?', 'en', 'fr')  # English to French
+"Salut, comment allez-vous aujourd'hui ?"
+```
+
+不错吧？现在是将这些功能整合到应用里了。
+

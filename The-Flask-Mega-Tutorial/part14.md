@@ -179,3 +179,29 @@ requests 包的 `get()` 方法发送一个 GET 方法的 HTTP 请求，使用给
 
 不错吧？现在是将这些功能整合到应用里了。
 
+Ajax 服务端实现
+===
+
+我首先实现服务器端部分。当用户点击翻译链接的时候，一个异步的 HTTP 请求将会发送给服务器。我将会在下一小节向你展示如何发送，现在我将集中精力于服务器如何处理该请求。
+
+一个异步请求和之前的请求类似，只不过它返回的是数据而不是 HTML 或者重定向，数据格式是 XML 或者更常用的 JSON。下面你可以看到在翻译视图函数中，调用了微软翻译 API 然后返回了以 JSON 格式的翻译文本。
+
+```python
+from flask import jsonify
+from app.translate import translate
+
+@app.route('/translate', methods=['POST'])
+@login_required
+def translate_text():
+    return jsonify({'text': translate(request.form['text'], request.form['source_language'], request.form['dest_language'])})
+```
+
+你可以看到，很简单。我将该路由实现为 POST 请求。关于什么时候使用 GET 和 POST 没有绝对的规则。因为客户端会发送数据，因此我决定使用 POST 请求，就和提交表单的路由类似。`request.form` 属性是 Flask 暴露的一个字典，包含了提交的所有信息。当我之前在处理表单的时候，没有用这个是因为 Flask-WTF 已经做了相应的工作，但是在这里，并没有真正的 web 表单，因此我需要自己直接提取数据。
+
+在这个函数里我直接调用了 `translate()` 函数，并且传递相应的三个参数。返回的结果被组织到了一个字典里，使用 `text` 键，然后该字典被传递给 `jsonify()` 函数，它会将字典转换成一个 JSON 格式的数据包。`jsonify()` 返回的结果将会发送给客户端。
+
+比如，如果客户端想翻译字符串 `Hello, World!` 为西班牙语，那么请求的响应将会是这个样子：
+
+```python
+{ "text": "Hola, Mundo!" }
+```

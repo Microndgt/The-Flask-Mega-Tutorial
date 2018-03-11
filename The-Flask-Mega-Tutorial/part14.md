@@ -205,3 +205,106 @@ def translate_text():
 ```python
 { "text": "Hola, Mundo!" }
 ```
+
+Ajax 客户端实现
+===
+
+现在服务器可以通过 `/translate` URL 提供翻译服务，我需要在用户点击翻译链接的时候来调用这个 URL，并且传递要翻译的文本，源语言以及目标语言。如果你对如何在浏览器使用 JavaScript 还不是很了解，那么这将是一个非常好的学习体验。
+
+在浏览器使用 JavaScript 的时候，显示的页面通常是被内在的表示在文档对象模型或者是 DOM 中。它是一种参考该页面存在的所有元素的垂直结构。在该上下文运行的 JavaScript 代码可以对该页面的 DOM 进行改变。
+
+让我们先来讨论下运行在浏览器的 JavaScript 代码如何能获得我需要传递给服务器的那三个参数。为了能获取文本，我需要能够定位到包含微博内容的 DOM 节点，并且读取它的内容。为了能够方便的定位到包含微博内容的 DOM 节点，我会给每个微博内容赋予一个单独的 ID。如果你查看 `_post.html` 模板，渲染微博内容的那一行只是读取 `{{ post.body }}`。我将要做的是将该内容包含在一个 `<span>` 元素中。它并不会带来视觉上的改变，只是为了能够给我一个插入标识符的地方。
+
+```html
+<span id="post{{ post.id }}">{{ post.body }}</span>
+```
+
+这将会给每一篇微博赋予一个单独的标识符，以 `post1`, `post2`等的格式，后面的数字其实匹配了每篇微博在数据库中的标识符。现在每篇文章都有一个单独的标识符，现在我就可以对给定的 ID 值通过 jQuery 来定位到 `<span>` 元素，并且从中提取出相应文本。比如，如果我想获取一篇 ID 为 123 的微博内容，我可以这样做：
+
+```javascript
+$('#post123').text()
+```
+
+这里的 `$` 符号是 jQuery 库提供的一个函数。该库一般被 Bootstrap 使用，因此已经被 Flask-Bootstrap 包含了。`#` 是 jQuery 的选择器语法一部分，代表了后面的是某个元素的 ID。
+
+另外我还想有个地方能够插入从服务器接收的翻译好的文章。我要做的是将翻译链接替换为翻译后的文本，因此这个节点我也需要一个单独的标识符。
+
+```html
+<span id="translation{{ post.id }}">
+    <a href="#">{{ _('Translate') }}</a>
+</span>
+```
+
+现在对于一个给定的微博 ID，我就有一个对应的 `post<ID>` 节点和一个对应的 `translation<ID>` 节点。
+
+下一步是写一个能够完成所有翻译任务的函数。该函数将会使用输入和输出 DOM 节点，源语言和目标语言作为参数，并且携带三个参数向服务器发送异步请求，最后使用翻译后的文本替换翻译链接。看起来要完成很多工作，其实实现起来很简单。
+
+```html
+{% block scripts %}
+    ...
+    <script>
+        function translate(sourceElem, destElem, sourceLang, destLang) {
+            $(destElem).html('<img src="{{ url_for('static', filename='loading.gif') }}">');
+            $.post('/translate', {
+                text: $(sourceElem).text(),
+                source_language: sourceLang,
+                dest_language: destLang
+            }).done(function(response) {
+                $(destElem).text(response['text'])
+            }).fail(function() {
+                $(destElem).text("{{ _('Error: Could not contact server.') }}");
+            });
+        }
+    </script>
+{% endblock %}
+```
+
+前两个参数是微博和翻译链接节点的 ID。后面两个参数是源语言和目标语言代码。
+
+函数以比较好的方式开始：添加了一个旋转器图标用来替换翻译链接，这样用户就知道正在翻译。这是用 jQuery 完成的，使用了 `$(destElem).html()` 函数将原始的 HTML 替换为基于 `<img>` 链接的 HTML。对于这个旋转器，我是用了一个小的动态的 GIF 图，该图放在了 Flask 保存静态文件的 `app/static/loading.gif` 目录。为了生成该图的 URL，我使用了 `url_for()` 函数，传递了特比的路由名 `static` 以及给定的文件名。你可以在 [download package](https://github.com/miguelgrinberg/microblog/tree/v0.14) 中找到 `loading.gif` 图像。
+
+现在我就有一个旋转器代替了翻译链接，这样用户就知道需要等待翻译结果的出现。下一步是向 `/translate` URL 发送 POST 请求。同样使用了 jQuery，这次使用了 `$.post()` 函数。该函数以类似浏览器提交表单的格式向服务器提交数据，这样使得 Flask 比较容易将数据组织到 `request.form` 字典中。`$.post()` 函数有两个参数，第一个是要发送请求的 URL，第二个是一个字典(JavaScript 中称为对象)，包含三个服务器期望的数据。
+
+你可能知道 JavaScript 有很多的回调函数，还有更加高级的回调形式被称作为 promises。现在我想做的是当请求完成并且浏览器接收到数据时候的处理。在 JavaScript 中一切都是异步的。所以我要做的是提供一个回调函数，当数据返回的时候浏览器去调用。而且为了使得程序更加健壮，当错误发生的时候也应该有一个回调函数来处理。有几种方式来制定这些回调函数，但是在这种情况，使用 promises 会使得代码很整洁。语法如下：
+
+```javascript
+$.post(<url>, <data>).done(function(response) {
+    // success callback
+}).fail(function() {
+    // error callback
+})
+```
+
+promise 语法允许你可以将回调函数串起来。在成功的回调函数中，我需要调用 `$(destElem).text()`，并且传递翻译后的文本。在错误情况下，我做了基本一样的事，除了文本是一个指定的错误消息，而且我确保它是一个翻译后的文本。
+
+那么现在唯一的事情就是如何使用正确的参数来出发 `translate()` 函数了。有几种方式来做这件事，我现在只是将该函数的调用嵌入到了链接的 `href` 属性中。
+
+```html
+<span id="translation{{ post.id }}">
+    <a href="javascript:translate(
+                '#post{{ post.id }}',
+                '#translation{{ post.id }}',
+                '{{ post.language }}',
+                '{{ g.locale }}');">{{ _('Translate') }}</a>
+</span>
+```
+
+链接的 href 属性可以接收任意 JavaScript 代码，只要代码以 `javascript:` 开头的就行，因此这样就是一种很方便的方式来调用翻译函数。因为该链接在当客户端请求页面的时候在服务端进行渲染，所以我使用了 `{{ }}` 表达式来生成函数的四个参数。每个微博都有自己的翻译链接。`#` 开头是因为它是一个 ID。
+
+那么现在实时翻译功能完成了！如果你已经在你的环境里设置了微软翻译器 API 的 key，你现在就应该能够出发翻译了。假定你默认使用英文，你需要写一篇其他语言的文章，这样才能看到翻译链接。下面是一个例子：
+
+![](https://blog.miguelgrinberg.com/static/images/mega-tutorial/ch15-translate.png)
+
+在本章我介绍了一些需要翻译到应用支持的所有语言的文本，所以很必要更新下翻译目录：
+
+```shell
+flask translate update
+```
+
+你自己的项目，你需要编辑在每个语言下面的 `messages.po` 文件来包含这些新测试的翻译，我已经在创建了西班牙语的翻译。
+
+为了发布这些新翻译，它们需要被编译
+
+```shell
+flask translate compile
+```

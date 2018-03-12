@@ -1,4 +1,4 @@
-The Flask Mega-Tutorial Part IX: Pagination
+The Flask Mega-Tutorial Part XIX: Ajax 
 ===
 
 原文地址: [The Flask Mega-Tutorial Part XIV: Ajax](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xiv-ajax)

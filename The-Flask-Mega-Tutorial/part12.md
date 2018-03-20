@@ -51,3 +51,35 @@ The Flask Mega-Tutorial Part XII: Dates and Times
 介绍 Moment.js 和 Flask-Moment
 ===
 
+Moment.js 是一个小的开源 JavaScript 库，它会将日期和时间以其他方式渲染，其提供了所有可以想到的格式化选项。不久之前我创建了 Flask-Moment，一个小的 Flask 插件使得将 moment.js 整合到你的应用变得非常容易。
+
+那么首先让我们安装 Flask-Moment:
+
+```bash
+(venv) $ pip install flask-moment
+```
+
+这个插件仍然是以通常的方式加入到 Flask 应用中：
+
+```python
+# ...
+from flask_moment import Moment
+
+app = Flask(__name__)
+# ...
+moment = Moment(app)
+```
+
+不像其他插件，Flask-Moment 是和 moment.js 一起工作的，因此应用所有的模板都必须导入这个库。为了保证该库可用，我将在 base 模板中加入该库。可以通过两种方式完成。最直接的方式是显式的加入 `<script>` 标签导入该库，但是 Flask-Moment 让这一切变得更加容易，通过暴露了一个 `moment.include_moment()` 函数来生成 `<script>` 标签：
+
+```html
+{% block scripts %}
+    {{ super() }}
+    {{ moment.include_moment() }}
+{% endblock %}
+```
+
+添加在这里的 `scripts` 块是另一个通过 Flask-Bootstrap 基准模板导出的块。这个地方就是 JavaScript 库被导入的地方。这个块和之前的不一样，它已经在 base 模板中定义了一些内容。我想做的只是加入 moment.js 库，而不是丢掉 base 中的内容。这通过 `super()` 语句实现，它保留了 base 模板中的内容。如果你没在模板中的块使用 `super()`，那么任何在 base 模板中定义的内容将会丢失。
+
+使用 Moment.js
+===

@@ -59,6 +59,7 @@ Fork 本仓库，翻译原文一部分，然后向本仓库提交一个 PR。可
 - [Part IX: Pagination](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part9.md) - done - 100%
 - [Part XII: Dates and Times](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part12.md) - done - 100%
 - [Part XIX: Ajax](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part14.md) - done - 100%
+- [Part XV: A Better Application Structure](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part15.md) - doing - 0%
 
 贡献者
 ===

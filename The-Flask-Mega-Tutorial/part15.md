@@ -34,3 +34,59 @@ The Flask Mega-Tutorial Part XV: A Better Application Structure
 
 蓝图
 ===
+
+在 Flask 中，蓝图是一个逻辑结构来展示应用的一个子集。一个蓝图中可以包含路由，视图函数，表单，模板以及静态文件。如果你在一个单独的 Python 包中写一个蓝图，那么你将会拥有一个将应用特定功能相关元素压缩在一起的组件。
+
+蓝图的内容一开始是处于未激活状态的。为了将这些元素联系起来，蓝图需要在应用中注册。在注册的过程中，所有添加到蓝图的元素将会传递到应用中。因此你可以将蓝图作为应用的临时存储功能用来帮助组织你的代码。
+
+错误处理蓝图
+---
+
+我创建的第一个蓝图是包含错误处理器的蓝图。这个蓝图的结构如下：
+
+```
+app/
+    errors/                             <-- blueprint package
+        __init__.py                     <-- blueprint creation
+        handlers.py                     <-- error handlers
+    templates/
+        errors/                         <-- error templates
+            404.html
+            500.html
+    __init__.py                         <-- blueprint registration
+```
+
+本质上，我是将 `app/errors.py` 模块移到了 `app/errors/handlers.py` 中，然后将两个错误模板移到了 `app/templates/errors`，这样它们就和其他模板分开了。我还需要在错误处理器中修改 `render_template()` 调用，使用新的错误模板路径。在这之后我将蓝图的创建放在了 `app/errors/__init__.py` 模块中，然后在应用实例创建之后在 `app/__init__.py` 中注册蓝图。
+
+我应该注明 Flask 的蓝图是可以被配置来拥有独立的模版和静态文件的文件夹的。我决定将模板移到应用的模版文件夹的子文件夹下是为了让所有的模版都处于单层级下，但是如果你更喜欢将模版放在属于它的蓝图里面，也是可以的。比如，如果你在 `Blueprint()` 构造器中传递 `template_folder='templates'` 参数就可以在 `app/errors/templates` 下存储该蓝图的模板文件了。
+
+创建一个蓝图和创建一个应用是很相似的。这一工作是在蓝图包的 `__init__.py` 模块中完成的：
+
+```python
+from flask import Blueprint
+
+bp = Blueprint('errors', __name__)
+
+from app.errors import handlers
+```
+
+`Blueprint` 类接收蓝图的名字以及基模块的名字(一般和 Flask 应用实例一样，传递 `__name__`)，还有一些可选的参数，在这里我不需要。在蓝图对象被创建之后，我将导入 `handlers.py` 模块，这样错误处理器就会注册到蓝图中。在底部导入是为了避免循环导入。
+
+在 `handlers.py` 模块中，使用 `@bp.app_errorhandler` 装饰器而不是使用应用的 `@app.errorhandler` 装饰器。虽然最后的结果是一样的，但是这样做会使得应用的路由是蓝图独立的，这样会更容易扩展。我同样需要修改两个错误模板的路径。
+
+最后一步是将蓝图注册到应用上：
+
+```python
+app = Flask(__name__)
+
+# ...
+
+from app.errors import bp as errors_bp
+app.register_blueprint(errors_bp)
+
+# ...
+
+from app import routes, models  # <-- remove errors from this import!
+```
+
+为了注册一个蓝图，使用了 Flask 应用的 `register_blueprint()` 方法。当一个蓝图被注册之后，任何视图函数，模板，静态文件，错误处理器都会连接到应用上。我在 `app.register_blueprint()` 上面导入蓝图是为了防止循环依赖。

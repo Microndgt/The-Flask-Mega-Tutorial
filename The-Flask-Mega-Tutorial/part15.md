@@ -90,3 +90,43 @@ from app import routes, models  # <-- remove errors from this import!
 ```
 
 为了注册一个蓝图，使用了 Flask 应用的 `register_blueprint()` 方法。当一个蓝图被注册之后，任何视图函数，模板，静态文件，错误处理器都会连接到应用上。我在 `app.register_blueprint()` 上面导入蓝图是为了防止循环依赖。
+
+认证蓝图
+---
+
+将应用的认证函数重构成蓝图基本上和错误处理器一样。下面是重构后蓝图的图示：
+
+```
+app/
+    auth/                               <-- blueprint package
+        __init__.py                     <-- blueprint creation
+        email.py                        <-- authentication emails
+        forms.py                        <-- authentication forms
+        routes.py                       <-- authentication routes
+    templates/
+        auth/                           <-- blueprint templates
+            login.html
+            register.html
+            reset_password_request.html
+            reset_password.html
+    __init__.py                         <-- blueprint registration
+```
+
+为了创建这个蓝图，我必须将所有认证相关的功能移到我在这个蓝图创建的新的模块中。这包含一些视图函数，web 表单和一些支持函数，比如通过 email 来发送密码重置 token 的函数。我也将模板移到了应用的模板下面的子目录里，就和错误页面一样。
+
+当在蓝图中定义路由的时候，使用 `@bp.route` 装饰器而不是 `@app.route`。另外在使用 `url_for()` 构建 URL 的时候也有语法上的变化。对于一般的直接绑定到应用上的视图函数来说，`url_for()` 函数的第一个参数是视图函数的名字。当在一个蓝图中定义一个路由的时候，参数必须包含蓝图名和视图函数名，通过 `.` 来分隔。因此比如，我需要将 `url_for('login')` 都替换成 `url_for('auth.login')`，其他的视图函数也是一样。
+
+为了在应用上注册 `auth` 蓝图，我使用了稍微不同的形式：
+
+```python
+from app.auth import bp as auth_bp
+app.register_blueprint(auth_bp, url_prefix='/auth')
+```
+
+`register_blueprint` 函数调用出现了额外的参数，`url_prefix`，这是可选参数，给定这个参数之后，每一个通过该蓝图定义的路由都会在 URL 加上这个前缀。在很多情况下，这是一种命名空间，保证了在该蓝图下的路由和应用中的或者其他蓝图中的路由分离。对认证来说，我认为所有的路由都以 `/auth` 开始会更好，因此我添加了这个前缀。因此现在登陆 URL 变成了 `http://localhost:5000/auth/login`。因为我使用了 `url_for()` 来生成 URL，所以所有的 URL 都会自动的添加上这个前缀。
+
+主应用蓝图
+---
+
+第三个蓝图包含了核心应用逻辑。重构这部分和上面两个蓝图的构建方法一样。我将这个蓝图命名为 main，因此所有的 `url_for()` 调用都需要在视图函数名前面加上 `main.` 前缀。因为这是应用的核心功能，所以我决定将模板放在原来的位置不变。因为我已经将其他两个蓝图的模板放在了相应的子文件夹下，所以这样做没问题。
+

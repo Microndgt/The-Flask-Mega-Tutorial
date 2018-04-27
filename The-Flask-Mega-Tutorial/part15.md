@@ -298,3 +298,56 @@ RuntimeError: Working outside of application context.
 
 你也应该知道应用上下文是 Flask 使用的两种上下文之一。还有一个请求上下文，更加确切的是应用在一个请求之上的。在一个请求被处理之前请求上下文会被激活，Flask 的 request 和 session 变量就可以使用了，以及 Flask-Login 的 `current_user`.
 
+环境变量
+===
+
+该应用有好几个配置项是依赖于在服务器启动之前设置的环境变量。包括你的密钥(secret key)，电子邮件服务器信息，数据库 URL 以及微软的翻译器 API key。你可能觉得这不方便，因为每次打开新的终端都需要重新设置一遍环境变量。
+
+这种需要多个环境变量变量的应用一种通用的模式是将环境变量存储在一个 `.env` 文件里。应用在启动之前读取这个文件的变量，这样就不必每次都手动设置了。
+
+有一个支持 `.env` 文件的包，叫做 `python-dotenv`，首先让我们安装这个包
+
+```shell
+(venv) $ pip install python-dotenv
+```
+
+因为我在 `config.py` 模块中读取了所有的环境变量，因此我将在这里导入 `.env` 文件，并且是在 `Config` 类被创建之前，因此在该类被构建的时候那些环境变量就已经设置好了。
+
+```python
+import os
+from dotenv import load_dotenv
+
+basedir = os.path.abspath(os.path.dirname(__file__))
+load_dotenv(os.path.join(basedir, '.env'))
+
+class Config(object):
+    # ...
+```
+
+现在你就可以创建一个应用所有需要的环境变量的 `.env` 文件。最重要的一点是不要将 `.env` 文件加入到源代码控制中。你不会希望一个包含密码和其他敏感信息的文件包含在代码仓库里的。
+
+`.env` 文件不可以用作 Flask 的 `FLASK_APP` 和 `FLASK_DEBUG` 环境变量，因为这些需要在应用的引导程序中，在应用实例和配置对象存在之前读取。
+
+下面是一个 `.env` 文件的例子。
+
+```python
+SECRET_KEY=a-really-long-and-unique-key-that-nobody-knows
+MAIL_SERVER=localhost
+MAIL_PORT=25
+MS_TRANSLATOR_KEY=<your-translator-key-here>
+```
+
+依赖文件
+===
+
+到目前为止，我已经在 Python 虚拟环境中安装了许多包。如果你需要在其他机器上重新生成你的环境，你需要知道你现在安装了什么包。所以一般是在根目录下的 `requirements.txt` 文件中记下所有需要的依赖以及版本。列出这些依赖也很简单：
+
+```shell
+(venv) $ pip freeze > requirements.txt
+```
+
+`pip freeze` 命令会将所有安装的包以`requirements.txt` 要求的格式输出。现在如果你需要在其他机器上创建一个相同的虚拟环境，不需要一个个装依赖，只需要：
+
+```shell
+(venv) $ pip install -r requirements.txt
+```

@@ -130,3 +130,113 @@ app.register_blueprint(auth_bp, url_prefix='/auth')
 
 第三个蓝图包含了核心应用逻辑。重构这部分和上面两个蓝图的构建方法一样。我将这个蓝图命名为 main，因此所有的 `url_for()` 调用都需要在视图函数名前面加上 `main.` 前缀。因为这是应用的核心功能，所以我决定将模板放在原来的位置不变。因为我已经将其他两个蓝图的模板放在了相应的子文件夹下，所以这样做没问题。
 
+应用工厂模式
+===
+
+正如我在本章开始时所说，将应用对象作为全局变量会导致一些问题，主要是在一些测试场景上有一定的限制。在我介绍蓝图之前，应用不得不是全局变量，因为所有的视图函数和错误处理器必须被 `app` 的装饰器装饰，比如 `@app.route`。但是现在所有的路由和错误处理器都被移到了蓝图中，那么此时就应该改变把应用对象作为全局变量这种方式。
+
+我将要做的是，添加一个函数叫做 `create_app()` 来创建一个 Flask 应用对象，并且移除全局变量。转换稍微有点复杂，我会挑选一些复杂的部分，但是首先我们先来看看这个应用工厂函数。
+
+```python
+# ...
+db = SQLAlchemy()
+migrate = Migrate()
+login = LoginManager()
+login.login_view = 'auth.login'
+login.login_message = _l('Please log in to access this page.')
+mail = Mail()
+bootstrap = Bootstrap()
+moment = Moment()
+babel = Babel()
+
+def create_app(config_class=Config):
+    app = Flask(__name__)
+    app.config.from_object(config_class)
+
+    db.init_app(app)
+    migrate.init_app(app, db)
+    login.init_app(app)
+    mail.init_app(app)
+    bootstrap.init_app(app)
+    moment.init_app(app)
+    babel.init_app(app)
+
+    # ... no changes to blueprint registration
+
+    if not app.debug and not app.testing:
+        # ... no changes to logging setup
+
+    return app
+```
+
+你已经看到了大多数 Flask 扩展都是通过创建一个扩展的实例，然后传递应用对象作为参数进行初始化的。当应用对象没有以全局变量的形式存在，那么扩展就可以通过两个步骤进行初始化。扩展首先以全局变量的形式被创建，但是不会传递任何参数。这会创建一个扩展的实例但是并没有绑定到应用上。当应用在工厂函数中被创建的时候，`init_app()` 方法必须被调用让扩展绑定到当前的应用实例上。
+
+其他的初始化任务保持不变，但是被移动到了工厂函数里。包括了蓝图的注册以及日志的配置。注意到我添加了一个 `not app.testing` 条件子句来决定 email 和文件日志是否被激活，这样在测试中的日志都会被跳过。`app.testing` 标志在运行单元测试的时候为 `True`，由于配置中的 `TESTING` 变量被设置成了 `True`。
+
+那么谁来调用应用工厂函数呢？明显的地方是在顶层 `microblog.py` 脚本中调用，它是目前全局变量的应用对象唯一存在的地方。另外的地方是在 `tests.py`，在下一节我会详细的讨论单元测试。
+
+现在大多数对 `app` 的引用都转移到了蓝图中，但是仍然还有一些代码会使用 app 对象。比如，`app/models.py`，`app/translate.py` 和 `app/main/routes.py` 模块都引用了 `app.config`。幸运的是，Flask 开发者已经提供了如何在视图函数中更加方便的使用应用实例而不用像现在我这样去导入它。Flask 中提供的 `current_app` 是一个特别的上下文变量。你已经看到了其他上下文变量，比如用于存储当前语言的 `g` 变量。这两个以及 Flask-Login 的 `current_user` 和其他你没有见过的变量，是所谓的魔法变量，虽然是以全局变量的形式工作的，但是只有在处理一个请求的时候才可用，并且只有在处理该请求的线程中可以获取。
+
+将 app 替换为 Flask 的 `current_app` 变量消除了将应用实例作为全局变量进行导入。我可以通过简单的搜索和替换将所有的 `app.config` 引用变成 `current_app.config`。
+
+`app/email.py` 有一点挑战，所以我使用了一点小技巧
+
+```python
+from app import current_app
+
+def send_async_email(app, msg):
+    with app.app_context():
+        mail.send(msg)
+
+def send_email(subject, sender, recipients, text_body, html_body):
+    msg = Message(subject, sender=sender, recipients=recipients)
+    msg.body = text_body
+    msg.html = html_body
+    Thread(target=send_async_email,
+           args=(current_app._get_current_object(), msg)).start()
+```
+
+在 `send_email()` 函数中，应用实例被作为参数传入后台线程，之后会发送电子邮件但是不会阻塞主应用。直接在 `send_async_email()` 函数使用 `current_app` 作为后台线程运行不会成功，因为 `current_app` 是上下文变量，需要绑定到一个处理客户端请求的线程上。在其他线程中，`current_app` 则没有被赋值。直接向线程对象中传递 `current_app` 参数也不可以，因为 `current_app` 其实是一个动态生成应用实例的代理对象。因此直接传递一个代理对象就和在函数中直接使用 `current_app` 一样不会成功。我需要做的是提取出代理对象中实际的应用实例，然后作为 `app` 参数传递进去。`current_app._get_current_object()` 表达式从代理对象中提取出了实际的应用实例，所以这就是我作为参数传递到线程的对象。
+
+另外一个比较棘手的模块是 `app/cli.py`，其实现了一些操作语言翻译的快捷命令。`current_app` 对象不能在这里工作的原因是这些命令在启动的时候注册，而不是在处理请求的时候。为了移除这个模块的 `app` 引用，我使用了另一个技巧，是将这些自定义命令放入一个 `register()` 函数中，该函数接收 `app` 实例作为参数：
+
+```python
+import os
+import click
+
+def register(app):
+    @app.cli.group()
+    def translate():
+        """Translation and localization commands."""
+        pass
+
+    @translate.command()
+    @click.argument('lang')
+    def init(lang):
+        """Initialize a new language."""
+        # ...
+
+    @translate.command()
+    def update():
+        """Update all languages."""
+        # ...
+
+    @translate.command()
+    def compile():
+        """Compile all languages."""
+        # ...
+```
+
+然后在 `microblog.py` 中调用 `register()` 函数，下面是重构之后完整的 `microblog.py`
+
+```python
+from app import create_app, db, cli
+from app.models import User, Post
+
+app = create_app()
+cli.register(app)
+
+@app.shell_context_processor
+def make_shell_context():
+    return {'db': db, 'User': User, 'Post' :Post}
+```

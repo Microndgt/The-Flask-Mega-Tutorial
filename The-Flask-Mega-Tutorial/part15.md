@@ -240,3 +240,61 @@ cli.register(app)
 def make_shell_context():
     return {'db': db, 'User': User, 'Post' :Post}
 ```
+
+改进单元测试
+===
+
+正如我在本章开始时候暗示的一样，目前已经做了很多工作可以用于提升单元测试。当你运行单元测试的时候你想确保你的应用被配置正确而不会影响你的开发环境，比如数据库。
+
+当前版本的 `tests.py` 是使用了在配置已经应用到应用实例上之后改变其配置的技巧，但是这样做比较危险，因为不是所有类型的改变在这之后会生效。我想要的是在我将配置添加到应用之前指定为测试环境配置。
+
+`create_app()` 函数现在接收一个配置类作为参数。默认，使用在 `config.py` 中定义的 `Config` 类，现在我可以创建使用不同配置的应用实例，只需要将不同的配置类传递给工厂函数。下面是一个跟我的单元测试匹配的配置类。
+
+```python
+from config import Config
+
+class TestConfig(Config):
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite://'
+```
+
+这里我们创建了 `Config` 类的子类，然后重写了 SQLAlchemy 配置以使用内存 SQLite 数据库。我同样将 `TESTING` 属性设置为 True，当然现在不需要，但是如果应用需要辨别现在是在运行单元测试还是其他什么的时候很有用。
+
+回忆一下，我的单元测试依赖于 `SetUp()` 和 `tearDown()` 方法，被单元测试框架自动的调用以创建和销毁适合每个单元测试运行的环境。我可以通过这两个方法来为每个测试创建或者销毁一个新的应用实例。
+
+```python
+class UserModelCase(unittest.TestCase):
+    def setUp(self):
+        self.app = create_app(TestConfig)
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        db.create_all()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        self.app_context.pop()
+```
+
+新的应用会在 `self.app` 中存储，但是单纯创建一个应用并不能让测试正常工作。考虑 `db.create_all()` 语句，db 实例需要知道当前的应用实例是什么，因为它需要从 `app.config` 中获取数据库 URI，但是当你使用应用工厂的时候可以创建多个应用。那么 db 如何才能知道使用 `self.app` 实例呢？
+
+答案就是应用上下文。还记得 `current_app` 变量么，当没有全局变量导入的时候它是应用代理。这个变量会在当前线程中寻找一个激活的应用上下文，如果找到，它会从中获取应用实例。如果没有上下文存在，那么就没办法知道哪个应用是活动的，所以 `current_app` 会引发一个异常。在下面你可以看到如何在一个 Python 控制台进行工作的。这需要通过 python 来启动控制台，因为 `flask shell` 命令会为当前会话自动激活一个应用上下文。
+
+```
+>>> from flask import current_app
+>>> current_app.config['SQLALCHEMY_DATABASE_URI']
+Traceback (most recent call last):
+    ...
+RuntimeError: Working outside of application context.
+
+>>> from app import create_app
+>>> app = create_app()
+>>> app.app_context().push()
+>>> current_app.config['SQLALCHEMY_DATABASE_URI']
+'sqlite:////home/miguel/microblog/app.db'
+```
+
+这就是秘诀所在！在调用你的视图函数之前，Flask 会进行上下文入栈，这样会激活 `current_app` 和 `g`。当请求完成之后，上下文就被移除了，同时这些变量也被销毁了。为了 `db.create_all()` 调用可以在 `setUp()` 方法中运行，我将刚才创建的应用上下文入栈，这样，`db.create_all()` 就可以使用 `current_app.config` 得到数据库地址。然后在 `tearDown()` 方法中将上下文移除，并且将相关的状态清理。
+
+你也应该知道应用上下文是 Flask 使用的两种上下文之一。还有一个请求上下文，更加确切的是应用在一个请求之上的。在一个请求被处理之前请求上下文会被激活，Flask 的 request 和 session 变量就可以使用了，以及 Flask-Login 的 `current_user`.
+

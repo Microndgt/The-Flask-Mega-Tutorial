@@ -1,21 +1,9 @@
 # 《The Flask Mega-Tutorial》翻译计划
 
-进度 ![](https://img.shields.io/badge/status-47%25-green.svg)
+进度 ![](https://img.shields.io/badge/status-52%25-green.svg)
 
 - 原文地址: [blog.miguelgrinberg.com](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world)
 - 作者: `miguelgrinberg`
-
-背景
----
-
-以前买过 `miguelgrinberg` 的 Flask 教程，是我用 Python 写 Web 的入门书，很感谢。后来一直关注作者的博客，并且翻译过数篇文章，这次作者推出新的 `The Flask Mega-Tutorial`，于是就想翻译出来，方便广大中国的 Flask 开发者，便有了这个项目。
-
-翻译过的文章:
-
-- [HOW SECURE IS THE FLASK USER SESSION?](http://skyrover.me/2017/11/05/flask_user_session_security/)
-- [IMPLEMENTING USER COMMENTS WITH SQLALCHEMY](http://skyrover.me/2017/10/31/user_comments_sqlalchemy/)
-- [RUNNING YOUR FLASK APPLICATION OVER HTTPS](http://skyrover.me/2017/09/17/flask_https/)
-- [USING CELERY WITH FLASK](http://skyrover.me/2017/03/01/Using-Celery-With-Flask/)
 
 简介
 ---
@@ -59,6 +47,7 @@ Fork 本仓库，翻译原文一部分，然后向本仓库提交一个 PR。可
 - [Part IX: Pagination](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part9.md) - done - 100%
 - [Part XII: Dates and Times](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part12.md) - done - 100%
 - [Part XIX: Ajax](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part14.md) - done - 100%
+- [Part XV: A Better Application Structure](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part15.md) - done - 100%
 
 贡献者
 ===

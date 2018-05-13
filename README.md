@@ -1,4 +1,4 @@
-# 《The Flask Mega-Tutorial》翻译计划
+# 《The Flask Mega-Tutorial》翻译学习笔记
 
 进度 ![](https://img.shields.io/badge/status-52%25-green.svg)
 

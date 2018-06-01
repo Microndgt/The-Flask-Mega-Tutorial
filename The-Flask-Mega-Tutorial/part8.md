@@ -241,7 +241,7 @@ id | text | user_id | follower_id | followed_id
 1 | post from susan	| 2 | 1 | 2
 1 | post from mary	| 3 | 2 | 3
 2 | post from david	| 4 | 1 | 4
-3 | post from john	| 1 | 3 | 4
+3 | post from john	| 4 | 3 | 4
 
 注意 `user_id` 和 `followed_id` 列的值是对应的，这就是联结条件。用户 john 没有出现在联结表中，是因为没有人关注 john。david 的文章出现了两次，因为有两个不同的用户关注了 david。
 

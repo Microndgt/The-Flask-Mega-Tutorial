@@ -1,4 +1,4 @@
-# 《The Flask Mega-Tutorial》翻译计划
+# 《The Flask Mega-Tutorial》翻译学习笔记
 
 进度 ![](https://img.shields.io/badge/status-52%25-green.svg)
 
@@ -48,20 +48,14 @@ Fork 本仓库，翻译原文一部分，然后向本仓库提交一个 PR。可
 - [Part XII: Dates and Times](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part12.md) - done - 100%
 - [Part XIX: Ajax](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part14.md) - done - 100%
 - [Part XV: A Better Application Structure](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part15.md) - done - 100%
+- [Part XVI: Full-Text Search](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part16.md) - doing - 0%
 
 贡献者
 ===
 
-Pull Request
----
-
 - [Microndgt](https://github.com/Microndgt)
 - [vsxen](https://github.com/vsxen)
 - [zenghongtu](https://github.com/zenghongtu)
-
-Issue
----
-
 - [lanpong](https://github.com/lanpong)
 
 工具

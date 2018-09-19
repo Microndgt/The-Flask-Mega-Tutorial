@@ -41,7 +41,9 @@ Fork 本仓库，翻译原文一部分，然后向本仓库提交一个 PR。可
 - [Part I: Hello, World!](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part1.md) - done - 100%
 - [Part II: Templates](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part2.md) - done - 100%
 - [Part III: Web Forms](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part3.md) - done - 100%
+- [Part IV: Database](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part4.md) - done - 100%
 - [Part V: User Logins](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part5.md) - done - 100%
+- [Part VI: Profile Page](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part6.md) - done - 100%
 - [Part VII: Error Handling](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part7.md) - done - 100%
 - [Part VIII: Followers](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part8.md) - done - 100%
 - [Part IX: Pagination](https://github.com/Microndgt/The-Flask-Mega-Tutorial/blob/master/The-Flask-Mega-Tutorial/part9.md) - done - 100%
